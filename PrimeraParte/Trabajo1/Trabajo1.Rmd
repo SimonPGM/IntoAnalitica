@@ -23,3 +23,11 @@ language: "es"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+\input{titlepage}
+\thispagestyle{empty}
+\tableofcontents
+
+\newpage
+
+\pagestyle{myheadings}
+\setcounter{page}{3}
