@@ -21,6 +21,7 @@ language: "es"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 ```
 
 \input{titlepage}
@@ -31,3 +32,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 \pagestyle{myheadings}
 \setcounter{page}{3}
+
+
+\section{Crecimiento craneofacial}
+\subsection{Análisis descriptivo}
+
+A continuación se presenta un análisis descriptivo 
+
+```{r descriptiva, echo=F, fig.align='center'}
+datos <- read.csv("datosage_6.csv", header = T)
+ggplot(data = datos) +
+  geom_point(mapping = aes(x = gender, y = afh)) +
+  theme_minimal()
+```
+
