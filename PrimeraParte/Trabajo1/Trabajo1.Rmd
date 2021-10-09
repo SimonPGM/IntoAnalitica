@@ -37,12 +37,69 @@ library(tidyverse)
 \section{Crecimiento craneofacial}
 \subsection{Análisis descriptivo}
 
-A continuación se presenta un análisis descriptivo 
+Antes de realizar cualquier modelo predictivo o análisis inferencial es importante 
+hacer un análisis descriptivo para formular hipótesis.
+Teniendo en cuenta que la variable género es cualitativa, un diagrama de dispersión de
+dispersión entre dicha variable y afh no sería muy adecuado, por lo que se realiza un
+diagrama de cajas el cual logra representar de forma más clara el comportamiento de
+una variable continua en distintas categorías.
 
-```{r descriptiva, echo=F, fig.align='center'}
-datos <- read.csv("datosage_6.csv", header = T)
+```{r boxplot, echo=F, fig.align='center'}
+datos <- read.csv("datosage_6.csv", header = T) %>%
+  transmute(X, id, afh, age, gender = as.factor(gender))
+
 ggplot(data = datos) +
-  geom_point(mapping = aes(x = gender, y = afh)) +
+  geom_boxplot(mapping = aes(x = gender, y = afh, color = gender)) +
+  labs(colour = "Género") + 
+  xlab("Género") +
   theme_minimal()
 ```
+
+De este diagrama de cajas se pueden sacar algunas conclusiones:
+
+* Las cajas se traslapan por lo que no hay evidencia muestral suficiente para pensar
+que el afh medio de los hombres sea diferente al de las mujeres.
+* La amplitud de las cajas es muy similar sugiriendo que la variabilidad no cambia 
+según el género.
+* La cantidad de datos que están por encima de la mediana es muy similar en ambos casos 
+sugiriendo que una distribución simétrica se ajustaría bien a los datos.
+
+Dicho lo anterior se procede a graficar un histograma de la variable respuesta o output
+sin discriminar por género
+
+```{r histograma, echo=F, fig.align='center'}
+ggplot(data = datos, aes(x = afh)) +
+  geom_histogram(aes(y = ..density..), binwidth = 5, 
+                 color = "darkgreen", fill = "lightgreen") +
+  geom_density(alpha = .2) +
+  ylab("Frecuencia") +
+  theme_minimal()
+```
+
+El histograma para afh muestra una pequeña asimetría negativa, sin embargo no se puede
+afirmar si el ligero sesgo es estadísticamente significativo porque en casos que no son
+tan evidentes la decisión depende bastante del analista, lo cual sugiere que valdría
+la pena hacer un test formal para contrastar: 
+
+$$
+\begin{aligned}
+\begin{cases}
+H_0: \text{La variable afh se distribuye normal} \\
+H_1: \text{La variable afh NO se distribuye normal}
+\end{cases}
+\end{aligned}
+$$
+Cabe resaltar que lo visto en el boxplot fue un análisis discriminando por género y
+la normalidad en dimensiones bajas no implica la de dimensiones altas.
+
+**Notas** 
+
+* Todas las entradas de la variable edad es 6 lo cual no aporta ningún tipo de
+información útil para análisis descriptivo o modelación.
+* Las bases de datos relacionales tiene un atributo obligatorio (columna) conocido 
+como clave primaria la cual ayuda a identificar de forma única a cada fila; teniendo 
+en cuenta que la variable id tiene 150 entradas únicas (el mismo número de
+observaciones) se asume que está variable realmente es la clave primaria de esta base
+de datos y aunque pudiera existir algún tipo de correlación entre esta y el output,
+esto se debería más a la casualidad que a la causalidad.
 
