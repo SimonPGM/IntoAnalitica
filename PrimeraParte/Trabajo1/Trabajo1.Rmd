@@ -22,6 +22,9 @@ language: "es"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(class)
 ```
 
 \input{titlepage}
@@ -33,8 +36,10 @@ library(tidyverse)
 \pagestyle{myheadings}
 \setcounter{page}{3}
 
+# Ejercicio (1)
 
-\section{Crecimiento craneofacial}
+# Ejercicio (2)
+
 \subsection{Análisis descriptivo}
 
 Antes de realizar cualquier modelo predictivo o análisis inferencial es importante 
@@ -114,6 +119,171 @@ que la regresión loess se usa como modelo no paramétrico.
 
 ```{r modelos, echo=F}
 param <- lm(afh ~ gender, data = datos)
-nparam <- loess(afh ~ gender, data = datos)
+#nparam <- loess(afh ~ gender, data = datos)
+```
+
+# Ejercicio (3) 
+
+Ejercicio 7, texto guía (primera edición), página 53. Hágalo también en R.
+
+La siguiente tabla proporciona un conjunto de datos de entrenamiento que contiene seis observaciones, tres predictores y una variable de respuesta cualitativa.
+
+```{r tabla1, include=FALSE}
+
+# Lectura de datos
+datos3 <- read.csv("datos3.txt", sep = " ", encoding = "UTF-8") 
+
+```
+
+```{r tabla2, echo=FALSE}
+
+# Presentación de tabla en el documento
+kable(
+      datos3,
+      booktabs = T,
+      col.names = c("Obs.", "$X_1$", "$X_2$", "$X_3$", "$Y$"),
+      align = rep('c', 5),
+      escape = F
+      ) %>%
+      kable_styling(latex_options = c("HOLD_position")) 
+```
+
+Suponga que deseamos usar este conjunto de datos para hacer una predicción para $Y$ cuando
+$X_1 = X_2 = X_3 = 0$ usando K vecinos más cercanos.
+
+## Literal (a)
+
+Calcule la distancia euclidiana entre cada observación y el punto de prueba, \newline $X_1 = X_2 = X_3 = 0$.
+
+```{r dist-euc-calculos, include=FALSE}
+# Se salcula la distancia euclideana con respecto al nuevo punto.
+punto <- c(0, 0, 0)
+
+datos3 <- datos3 %>%
+            mutate(dis = sqrt( (X1 - punto[1])^2 + (X2 - punto[2])^2 + (X3 - punto[3])^2 ))
+
+```
+
+Se procede a calcular la distancia euclideana con respecto a $X_1 = X_2 = X_3 = 0$ para cada una de las observaciones de la forma $(X_{1i}, X_{2i}, X_{3i}); i = 1, ..., 6$ como: 
+
+$$ \text{Distancia Euclideana Obs. i} = \sqrt{(X_{1i} - 0)^2 + (X_{2i} - 0)^2 + (X_{3i} - 0)^2}$$
+
+```{r dist-euc-tabla, echo=FALSE}
+kable(
+      datos3[c(1:4, 6, 5)],
+      booktabs = T,
+      col.names = c("Obs.", "$X_1$", "$X_2$", "$X_3$", "Distancia euclideana", "$Y$"),
+      align = rep('c', 5),
+      escape = F
+      ) %>%
+      kable_styling(latex_options = c("HOLD_position")) 
+```
+
+## Literal (b)
+
+¿Cuál es nuestra predicción con K = 1? ¿Por qué?
+
+Note que para el primer literal se NO se realizó una estandarización de los datos. Siguiendo las recomendaciones proporcionadas en las sesiones de clase, se realiza nuevamente lo solicitado en el primer literal con una base de datos estandarizada (incluyendo el nuevo dato sobre el cual se quiere predecir.). 
+
+Se escala cada una de las variables restando por su media y diviendo sobre su desviación estándar, se obtiene ($X_1', X_2', X_3'$).
+
+```{r dist-euc-scale-calculos, include=FALSE}
+# Se añade la nueva observación y se escalan los datos
+datos3_est <- datos3[,1:5] %>%
+                add_row(Obs. = 7,
+                        X1 = 0,
+                        X2 = 0,
+                        X3 = 0, 
+                        Y = "Desconocido") %>%
+                mutate(X1 = scale(X1),
+                       X2 = scale(X2),
+                       X3 = scale(X3)) 
+
+# Punto sobre el cual se calcula la distancia
+punto <- as.numeric(datos3_est[7,2:4])
+
+# Distancia
+datos3_est <- datos3_est %>%
+                mutate(dist = sqrt( (X1 - punto[1])^2 + (X2 - punto[2])^2 + (X3 - punto[3])^2 ) )
+
+
+```
+
+```{r dist-euc-scale-tabla, echo=FALSE}
+
+# Presentación de tabla en el documento
+kable(
+      datos3_est[c(1:4, 6, 5)],
+      booktabs = T,
+      col.names = c("Obs.", "$X_1'$", "$X_2'$", "$X_3'$", "Distancia euclideana", "Y"),
+      align = rep('c', 6),
+      escape = F
+      ) %>%
+      kable_styling(latex_options = c("HOLD_position"))  %>%
+      row_spec(5, background = "green")
+```
+
+De esta forma, se ve que la observación más cercana corresponde a la número 5, esta observación es verde. Así pues, utilizando un $K = 1$, la predicción para la nueva observación sería \textbf{verde.}
+
+## Literal (c)
+
+¿Cuál es nuestra predicción con K = 3? ¿Por qué?
+
+Recurriendo a la tabla presentada previamente e identificando las tres observaciones más cercanas (las cuales se resaltan), se tiene que 2 de las 3 observaciones son verdes por lo que la predicción para la nueva observación sería \textbf{verde.}
+
+```{r dist-euc-scale-tabla2, echo=FALSE}
+
+# Presentación de tabla en el documento
+kable(
+      datos3_est[c(1:4, 6, 5)],
+      booktabs = T,
+      col.names = c("Obs.", "$X_1'$", "$X_2'$", "$X_3'$", "Distancia euclideana", "Y"),
+      align = rep('c', 6),
+      escape = F
+      ) %>%
+      kable_styling(latex_options = c("HOLD_position"))  %>%
+      row_spec(c(4, 5), background = "green") %>%
+      row_spec(6, background = "red")
+```
+
+## Literal (d)
+
+Si el límite de decisión de Bayes en este problema es muy no lineal, entonces esperaríamos que el mejor valor para K fuera grande o ¿pequeña? ¿Por qué?
+
+Un límite de decisión de Bayes altamente NO lineal implica que zonas espaciales donde una nueva observación es clasificada a la categoría verde están muy cerca (colindan) con zonas espaciales donde nuevas observaciones son clasificadas como rojas. 
+
+Elegir un $K$ relativamente grande implicaría que para la clasificación se tomaría una zona espacial grande y dado lo descrito anteriormente, sería más probable considerar puntos para la clasificación que hacen parte de una clase diferente, lo que aumentaría la probabilidad de una clasificación incorrecta, se esperaría pues que el valor más adecuado para $K$ sea relativamente \textbf{pequeño.}
+
+El desarrollo en R utilizando la función `knn()` de la librería `class` está disponible en los anexos.
+
+# Ejercicio (4)
+
+# Anexos
+
+## Ejercicio 3
+
+Se presenta el código utilizado para cuando $K = 3$. Para otro $K$, solo haría falta cambiar el valor de tal variable en el código.
+
+```{r echo=TRUE}
+
+# Datos de entrenamiento, corresponden a las primeras 6 obs.
+train <- datos3_est[1:6, c("X1", "X2", "X3")] 
+
+# Nuevo dato (x_0)
+new_data <- datos3_est[7 ,c("X1", "X2", "X3")]
+
+# Variable respuesta Y 
+labels <- datos3_est[1:6,c("Y")]
+
+```
+
+
+```{r echo=TRUE}
+fit.knn <- knn(train = train, 
+               test = new_data, 
+               cl = labels, 
+               k = 3, 
+               prob = TRUE)
+fit.knn
 ```
 
