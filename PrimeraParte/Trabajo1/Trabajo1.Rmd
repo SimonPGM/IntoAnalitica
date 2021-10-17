@@ -50,6 +50,8 @@ datos <- read.csv("datosage_6.csv", header = T) %>%
 
 ggplot(data = datos) +
   geom_boxplot(mapping = aes(x = gender, y = afh, color = gender)) +
+  scale_x_discrete(labels = c("Femenino", "Masculino")) + 
+  scale_colour_discrete(labels = c("F", "M")) +
   labs(colour = "Género") + 
   xlab("Género") +
   theme_minimal()
@@ -69,9 +71,10 @@ sin discriminar por género
 
 ```{r histograma, echo=F, fig.align='center'}
 ggplot(data = datos, aes(x = afh)) +
-  geom_histogram(aes(y = ..density..), binwidth = 5, 
+  geom_histogram(#aes(y = ..density..), 
+                 binwidth = 5, 
                  color = "darkgreen", fill = "lightgreen") +
-  geom_density(alpha = .2) +
+  #geom_density(alpha = .2) +
   ylab("Frecuencia") +
   theme_minimal()
 ```
@@ -89,6 +92,7 @@ H_1: \text{La variable afh NO se distribuye normal}
 \end{cases}
 \end{aligned}
 $$
+
 Cabe resaltar que lo visto en el boxplot fue un análisis discriminando por género y
 la normalidad en dimensiones bajas no implica la de dimensiones altas.
 
@@ -102,4 +106,14 @@ en cuenta que la variable id tiene 150 entradas únicas (el mismo número de
 observaciones) se asume que está variable realmente es la clave primaria de esta base
 de datos y aunque pudiera existir algún tipo de correlación entre esta y el output,
 esto se debería más a la casualidad que a la causalidad.
+
+\subsection{Modelos considerados}
+
+En la construcción de modelos se considera la regresión lineal simple como modelo paramétrico usando afh como variable respuesta y al género como covariable mientras
+que la regresión loess se usa como modelo no paramétrico.
+
+```{r modelos, echo=F}
+param <- lm(afh ~ gender, data = datos)
+nparam <- loess(afh ~ gender, data = datos)
+```
 
