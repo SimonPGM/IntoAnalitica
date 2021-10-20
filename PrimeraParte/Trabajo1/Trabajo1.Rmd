@@ -44,8 +44,8 @@ library(class)
 
 Antes de realizar cualquier modelo predictivo o análisis inferencial es importante 
 hacer un análisis descriptivo para formular hipótesis.
-Teniendo en cuenta que la variable género es cualitativa, un diagrama de dispersión de
-dispersión entre dicha variable y afh no sería muy adecuado, por lo que se realiza un
+Teniendo en cuenta que la variable género es cualitativa, un diagrama de dispersión
+entre dicha variable y afh no sería adecuado, por lo que se realiza un
 diagrama de cajas el cual logra representar de forma más clara el comportamiento de
 una variable continua en distintas categorías.
 
@@ -68,11 +68,11 @@ De este diagrama de cajas se pueden sacar algunas conclusiones:
 que el afh medio de los hombres sea diferente al de las mujeres.
 * La amplitud de las cajas es muy similar sugiriendo que la variabilidad no cambia 
 según el género.
-* La cantidad de datos que están por encima de la mediana es muy similar en ambos casos 
+* La mediana se encuentra en el centro de las cajas en ambos casos, 
 sugiriendo que una distribución simétrica se ajustaría bien a los datos.
 
 Dicho lo anterior se procede a graficar un histograma de la variable respuesta o output
-sin discriminar por género
+sin discriminar por género:
 
 ```{r histograma, echo=F, fig.align='center'}
 ggplot(data = datos, aes(x = afh)) +
@@ -98,6 +98,10 @@ H_1: \text{La variable afh NO se distribuye normal}
 \end{aligned}
 $$
 
+Recuerde que uno de los supuestos básicos del modelo de regresión lineal es que la
+variable respuesta se distribuya normal, lo cual refuerza la idea de probar dicha 
+hipótesis.
+
 Cabe resaltar que lo visto en el boxplot fue un análisis discriminando por género y
 la normalidad en dimensiones bajas no implica la de dimensiones altas.
 
@@ -105,21 +109,21 @@ la normalidad en dimensiones bajas no implica la de dimensiones altas.
 
 * Todas las entradas de la variable edad es 6 lo cual no aporta ningún tipo de
 información útil para análisis descriptivo o modelación.
-* Las bases de datos relacionales tiene un atributo obligatorio (columna) conocido 
-como clave primaria la cual ayuda a identificar de forma única a cada fila; teniendo 
-en cuenta que la variable id tiene 150 entradas únicas (el mismo número de
-observaciones) se asume que está variable realmente es la clave primaria de esta base
-de datos y aunque pudiera existir algún tipo de correlación entre esta y el output,
-esto se debería más a la casualidad que a la causalidad.
+* Las bases de datos relacionales tiene un atributo obligatorio (columna ó combinación
+de columnas) conocido como clave primaria la cual ayuda a identificar de forma única a
+cada fila; teniendo en cuenta que las variable id y X tienen 150 entradas únicas 
+(el mismo número de observaciones) se asume que estas variables forman la clave
+primaria de esta base de datos y aunque pudiera existir algún tipo de correlación 
+entre estas y el output, se debería más a la casualidad que a la causalidad.
 
 \subsection{Modelos considerados}
 
 En la construcción de modelos se considera la regresión lineal simple como modelo paramétrico usando afh como variable respuesta y al género como covariable mientras
 que la regresión loess se usa como modelo no paramétrico.
 
-```{r modelos, echo=F}
+```{r modelos, echo=F, warning=F}
 param <- lm(afh ~ gender, data = datos)
-#nparam <- loess(afh ~ gender, data = datos)
+nparam <- loess(afh ~ as.numeric(gender), data = datos)
 ```
 
 # Ejercicio (3) 
