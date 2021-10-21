@@ -64,8 +64,8 @@ ggplot(data = datos) +
 
 De este diagrama de cajas se pueden sacar algunas conclusiones:
 
-* Las cajas se traslapan por lo que no hay evidencia muestral suficiente para pensar
-que el afh medio de los hombres sea diferente al de las mujeres.
+* Las cajas se traslapan por lo que se puede pensar que el afh promedio de los hombres 
+no es diferente respecto al de las mujeres.
 * La amplitud de las cajas es muy similar sugiriendo que la variabilidad no cambia 
 según el género.
 * La mediana se encuentra en el centro de las cajas en ambos casos, 
@@ -76,16 +76,14 @@ sin discriminar por género:
 
 ```{r histograma, echo=F, fig.align='center'}
 ggplot(data = datos, aes(x = afh)) +
-  geom_histogram(#aes(y = ..density..), 
-                 binwidth = 5, 
+  geom_histogram(binwidth = 5, 
                  color = "darkgreen", fill = "lightgreen") +
-  #geom_density(alpha = .2) +
   ylab("Frecuencia") +
   theme_minimal()
 ```
 
-El histograma para afh muestra una pequeña asimetría negativa, sin embargo no se puede
-afirmar si el ligero sesgo es estadísticamente significativo porque en casos que no son
+El histograma para afh muestra una ligera asimetría negativa, sin embargo no se puede
+afirmar si el pqueño sesgo es estadísticamente significativo porque en casos que no son
 tan evidentes la decisión depende bastante del analista, lo cual sugiere que valdría
 la pena hacer un test formal para contrastar: 
 
@@ -118,13 +116,102 @@ entre estas y el output, se debería más a la casualidad que a la causalidad.
 
 \subsection{Modelos considerados}
 
-En la construcción de modelos se considera la regresión lineal simple como modelo paramétrico usando afh como variable respuesta y al género como covariable mientras
+En la etapa de modelación, se considera la regresión lineal simple como modelo
+paramétrico usando afh como variable respuesta y al género como covariable mientras
 que la regresión loess se usa como modelo no paramétrico.
 
-```{r modelos, echo=F, warning=F}
-param <- lm(afh ~ gender, data = datos)
-nparam <- loess(afh ~ as.numeric(gender), data = datos)
+Para la construcción de modelos se tomó el 80\% de observaciones de la base de datos
+en la modelación y se dejó el 20\% como datos de prueba.
+
+```{r train_test, echo=F}
+#Partiendo los datos aleatoriamente para la modelacion
+set.seed(3435)
+indexes <- sample(1:dim(datos)[1], 0.8 * dim(datos)[1])
+
+#Particion de los datos
+train_data <- datos[indexes, ] %>%
+  select(afh, gender) %>%
+  mutate(gender = as.numeric(gender))
+
+test_data <- datos[-indexes, ] %>%
+  select(gender) %>%
+  mutate(gender = as.numeric(gender))
+
+test_response <- datos[-indexes, ] %>%
+  select(afh) %>%
+  unlist() %>%
+  as.numeric()
+
+#NOTA: del factor con niveles 0 y 1, siendo numericos se convierten en 1 y 2
+#respectivamente
 ```
+
+
+```{r parametrico, echo=F, warning=F}
+#Se usa datos en los indices necesarios porque en dicha bd, gender es un factor
+#(lm sí soporta factores)
+param <- lm(afh ~ gender, data = datos[indexes, c("afh", "gender")])
+```
+
+Para la construcción del modelo no paramétrico, se tomaron distintos valores del span
+y se escogió el que produjo un menor MSE en los datos de entrenamiento.
+
+```{r busqueda_span, echo=F, warning=F, message=F}
+spans <- seq(from = 0.05, to = 0.95, by = 0.025)
+mse <- c()
+for(i in spans){
+  mod_actual <- loess(afh ~ gender, data = train_data, span = i)
+  mse <- append(mse, Metrics::mse(train_data$afh, fitted(mod_actual)))
+}
+#Nota: Para los spans escogidos se cumple que a partir de 0.575 el mse de
+#entrenamiento siempre es 31.51
+```
+
+Luego de revisar los valores del MSE para diferentes valores de span, se encontró algo
+curioso; para valores de span menores a 0.575 se produjieron NaN mientras que para
+valores mayores o iguales a 0.575 el MSE de entrenamiento fue el mismo para todos los
+modelos con un valor de 31.51, en resumen:
+
+$$
+MSE(\text{Span}) = \begin{cases}
+\text{NaN} \hspace{.2in} \text{Span} \ < \ 0.575 \\
+31.51 \hspace{.2in} \text{Span}  \geq \ 0.575
+\end{cases}
+$$
+Como el valor del Span no importa para valores mayores o iguales 0.575 en este caso
+particular, se escoge uno de 0.75 simplemente por buena práctica, ya que si se le 
+añade demasiada flexibilidad al modelo este tendría mucha varianza porque sería 
+muy sensible a pequeños cambios en los datos.
+
+```{r mod_no_parametrico, echo=F, warning=F, message=F}
+#Aqui si se usa la base train porque gender es numerica para que loess funcione
+nparam <- loess(afh ~ gender, data = train_data)
+```
+
+Dicho todo esto, se procede a realizar predicciones con los datos de prueba y
+posteriormente se realiza el calculo de los MSE correspondientes los cuales se 
+presentan en la siguiente tabla.
+
+```{r predicts, echo=F}
+#Modelo lineal
+afh_hat_param <- predict(param, data.frame(gender =  datos[-indexes, 5]))
+mse_param <- Metrics::mse(test_response, afh_hat_param)
+
+#Modelo loess (No parametrico)
+afh_hat_np <- predict(nparam, test_data)
+mse_np <- Metrics::mse(test_response, afh_hat_np)
+
+#Tabla comparativa
+comparacion <- data.frame(MSE = c(mse_param, mse_np) %>% round(3))
+rownames(comparacion) <- c("Lineal", "Loess")
+kable(comparacion, longtable = T, escape = F, booktabs = T)
+```
+
+Observe que ambos modelos tienen el mismo MSE por lo cual tienen el mismo poder
+predictivo en la situación dada.
+
+En este caso es más adecuado escoger el modelo lineal porque tiene el mismo poder
+predictivo que el loess, sin embargo la interpretabilidad de este último es demasiado compleja (por no decir que no se puede interpretar). Por otro lado, una de las mayores ventajas de los modelos lineales es que son muy interpretables por lo cual este le saca ventaja al modelo loess en esta situación particular y por eso se concluye que es el adecuado en este caso.
 
 # Ejercicio (3) 
 
