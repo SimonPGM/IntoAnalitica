@@ -1,0 +1,98 @@
+---
+title: "Untitled"
+author: "Sebastian Gaviria Sánchez"
+date: "18/10/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(ggplot2)
+```
+
+a). Para dar inicio a este desarrollo, en primer lugar se procede a cargar la base de datos propuesta.En este caso se desea proceder de un modo un poco distinto, puesto que, la base datos requerida ya se encuentra dentro de la librería ISLR.
+
+```{r, echo = F}
+college <- ISLR::College
+```
+
+b). Como se comentó en el apartado anterior, la base de datos fué cargada desde el paquete ISLR, por lo cual, ya se encuentra correctamente indexada en sus columnas, y los nombres de las universidades no son tomadas como una variable, que es el punto de principal desarrollo en este literal. 
+
+c). 
+i). Para crear una noción inicial del comportamiento de las variables descritas en el conjunto de datos, se puede hacer uso de la función summary() que muestra algunas características descriptivas de interés como sigue:
+
+```{r, echo = F}
+kable(summary(college)[,1:6], caption = "Resumen de las variables", align = 'c', longtable = T)
+```
+
+De acá se puede observar que, la proporción de instituciones privadas en el conjunto de datos es menor que la de universidades públicas. Por otro lado, se puede apreciar que el número medio de estudiantes que aplicaron a las universidades fué de alrededor de 3000 estudiantes, mientras que el número medio de estudiantes aceptados en las universidades es de 2019 estudiantes. Por otro lado, puede verse que el número medio de estudiantes que se matriculan luego de ser aceptados es apreciablemente menor, por lo cuál se podría considerar inicialmente que de los estudiantes que se presentan y son admitidos a las múltiples universidades, pocos realmente se matriculan, sin embargo para probar esto, se necesita acudir a alguna metodología estadística formal.
+
+```{r, echo = F}
+kable(summary(college)[,7:11], caption = "Resumen de las variables", align = 'c', longtable = T)
+```
+
+Sobre el tiempo que invierten los estudiantes universitarios en sus estudios, puede notarse que el número medio de aquellos que dedican todo su tiempo a estudiar es mayor que aquellos que dedican solo una parte de su tiempo. 
+
+Sobre las variables que implican costos, se puede ver que el costo medio de los libros ronda los 550 dólares, mientras que los costos de alojamiento y comida son de 4358 dólares en promedio.
+
+```{r, echo = F}
+kable(summary(college[,13:18]), caption = "Resumen de las variables", align = 'c', longtable = T)
+```
+
+Por último, de este resumen se puede notar que en promedio, el 72% de los profesores en cada facultad, poseen un título de doctorado.
+
+ii). Simón
+
+iii). Se desea analizar la cantidad de estudiantes que provienen del exterior e ingresan a una universidad privada o pública, y para dicha causa se propone el siguiente gráfico:
+
+```{r, echo = F}
+ggplot(college, aes(Private, Outstate, fill = Private)) + 
+  geom_boxplot() + 
+  labs(title = "Número de estudiantes extranjeros que ingresan a \ninstituciones públicas o privadas", fill = "Privado") + 
+  scale_x_discrete(labels = c("No", "Si")) + 
+  scale_color_manual(labels = c("No", "Si"), aesthetics = c("fill"), values = c("orange", "green")) +
+  xlab("") +
+  ylab("Proveniente del exterior") + 
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Y así, de lo anterior se puede apreciar que la cantidad de estudiantes extranjeros que provienen del exterior e ingresan a una universidad privada es significativamente mayor a la cantidad de estudiantes que provienen del exterior y deciden estudiar en una institución pública, dado que, las cajas del gráfico no se traslapan. 
+
+v).
+```{r, echo = F}
+p1 <- ggplot(college, aes(Books)) + geom_histogram(color="darkblue", fill="lightblue") + 
+      labs(title = "Precio de los libros") +
+      xlab("Precio en dólares") +
+      ylab("Frecuencia") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5))
+  
+p2 <- ggplot(college, aes(Room.Board)) + geom_histogram(color="darkorange", fill="gold") + 
+      labs(title = "Precio de la manutención") +
+      xlab("Precio en dólares") +
+      ylab("Frecuencia") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5))
+p3 <- ggplot(college, aes(PhD)) + geom_histogram(color="darkred", fill="tomato1") + 
+      labs(title = "Porcentaje de profesores \ncon doctorado en la facultad") +
+      xlab("Porcentaje") +
+      ylab("Frecuencia") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5))
+p4 <- ggplot(college, aes(Grad.Rate)) + geom_histogram(color="darkgreen", fill="lightgreen") + 
+      labs(title = "Porcentaje de estudiantes \nmatriculados que se gradúan") +
+      xlab("Porcentaje") +
+      ylab("Frecuencia") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5))
+ggpubr::ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2)
+
+```
+
+Y así, como se mencionó anteriormente en el resultado obtenido con la función summary(), el precio de los libros solicitados en las universidades se concentra en alrededor de los 500 dólares. Asimismo, para el costo de manutención, el precio de la misma ronda en su mayoría los 4300 dólares. 
+
+Por último, en términos de porcentajes, se puede apreciar en los dos últimos gráficos que el porcentaje medio de profesores con doctorado dentro de las faculades es de alrededor del 72% y del mismo modo, el porcentaje de estudiantes matriculados que no desertan se concentra al rededor del 65%.
+
+vi). Simón

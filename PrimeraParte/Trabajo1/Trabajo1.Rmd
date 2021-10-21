@@ -20,7 +20,7 @@ language: "es"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.pos = "H")
 library(tidyverse)
 library(knitr)
 library(kableExtra)
@@ -30,15 +30,48 @@ library(class)
 \input{titlepage}
 \thispagestyle{empty}
 \tableofcontents
+\listoffigures
+\listoftables
 
 \newpage
 
 \pagestyle{myheadings}
 \setcounter{page}{3}
 
-# Ejercicio (1)
+\section{Ejercicio 1}
 
-# Ejercicio (2)
+Considere un estimador $\hat{f}$ y un input $\mathbf{X}$ con los que se
+obtiene la predicción $\hat{\mathbf{Y}} = \hat{f}\left(\mathbf{X}\right)$.
+Asuma que $\hat{f} \text{ y } \mathbf{X}$ son fijos.
+Demuestre que:
+
+\begin{equation*}
+\begin{split}
+\mathbb{E}\left[\left(\mathbf{Y} - \hat{\mathbf{Y}}\right)^2\right] &= \mathbb{E}\left[\left(f\left(\mathbf{X}\right) + \varepsilon -  \hat{f}\left(\mathbf{X}\right)\right)^2\right] \\
+&= \underbrace{\left[f\left(\mathbf{X}\right) - \hat{f}\left(\mathbf{X}\right)\right]^2}_\text{Reducible} + \underbrace{var\left(\varepsilon \right)}_\text{Irreducible}
+\end{split}
+\end{equation*}
+
+$\underline{\textbf{dem}}:$
+
+En primer lugar, cabe resaltar que dada la naturaleza fija de $\mathbf{X} \text{ y } \hat{f}$, las expresiones $f\left(\mathbf{X}\right) \text { y } \hat{f}\left(\mathbf{X}\right)$ no son de naturaleza aleatoria, además, $\mathbb{E}\left[\varepsilon\right] = 0$.
+
+Teniendo en cuenta lo anterior se puede notar que
+
+\begin{equation*}
+\begin{split}
+\mathbb{E}\left[\left(\mathbf{Y} - \hat{\mathbf{Y}}\right)^2\right] &= \mathbb{E}\left[\left(f\left(\mathbf{X}\right) + \varepsilon -  \hat{f}\left(\mathbf{X}\right)\right)^2\right] \\
+&=\mathbb{E}\left[\left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right)^2 + 2 \varepsilon \left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right)   + \varepsilon^2 \right] \\
+&=  \left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right)^2 + 2 \left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right) \cancelto{0}{\mathbb{E}}\left[\varepsilon \right] + \mathbb{E}\left[\varepsilon^2 \right] \\
+&= \left[f\left(\mathbf{X}\right) - \hat{f}\left(\mathbf{X}\right)\right]^2 + var\left(\varepsilon \right)
+\end{split}
+\end{equation*}
+
+El cual es el resultado deseado.
+
+Por tanto el valor esperado de la distacia al cuadrado entre el valor de la variable respuesta y la estimación de esta para un conjunto de inputs y un estimador de la función $f$ fijos corresponde a un error que se puede reducir debido a las múltiples maneras existentes de estimar $f$ y a un error irreducible que corresponde a factores externos que desvían los valores reales de la tendencia principal.
+
+\section{Ejercicio 2}
 
 \subsection{Análisis descriptivo}
 
@@ -101,17 +134,20 @@ $$
 Cabe resaltar que lo visto en el boxplot fue un análisis discriminando por género y
 la normalidad en dimensiones bajas no implica la de dimensiones altas.
 
-**Notas** 
+\textbf{Notas} 
 
-* Todas las entradas de la variable edad es 6 lo cual no aporta ningún tipo de
+\begin{itemize}
+
+\item Todas las entradas de la variable edad es 6 lo cual no aporta ningún tipo de
 información útil para análisis descriptivo o modelación.
-* Las bases de datos relacionales tiene un atributo obligatorio (columna) conocido 
+\item Las bases de datos relacionales tiene un atributo obligatorio (columna) conocido 
 como clave primaria la cual ayuda a identificar de forma única a cada fila; teniendo 
 en cuenta que la variable id tiene 150 entradas únicas (el mismo número de
 observaciones) se asume que está variable realmente es la clave primaria de esta base
 de datos y aunque pudiera existir algún tipo de correlación entre esta y el output,
 esto se debería más a la casualidad que a la causalidad.
 
+\end{itemize}
 \subsection{Modelos considerados}
 
 En la construcción de modelos se considera la regresión lineal simple como modelo paramétrico usando afh como variable respuesta y al género como covariable mientras
@@ -122,7 +158,7 @@ param <- lm(afh ~ gender, data = datos)
 #nparam <- loess(afh ~ gender, data = datos)
 ```
 
-# Ejercicio (3) 
+\section{Ejercicio 3}
 
 Ejercicio 7, texto guía (primera edición), página 53. Hágalo también en R.
 
@@ -151,7 +187,7 @@ kable(
 Suponga que deseamos usar este conjunto de datos para hacer una predicción para $Y$ cuando
 $X_1 = X_2 = X_3 = 0$ usando K vecinos más cercanos.
 
-## Literal (a)
+\subsection{Literal (a)}
 
 Calcule la distancia euclidiana entre cada observación y el punto de prueba, \newline $X_1 = X_2 = X_3 = 0$.
 
@@ -179,7 +215,7 @@ kable(
       kable_styling(latex_options = c("HOLD_position")) 
 ```
 
-## Literal (b)
+\subsection{Literal (b)}
 
 ¿Cuál es nuestra predicción con K = 1? ¿Por qué?
 
@@ -225,7 +261,7 @@ kable(
 
 De esta forma, se ve que la observación más cercana corresponde a la número 5, esta observación es verde. Así pues, utilizando un $K = 1$, la predicción para la nueva observación sería \textbf{verde.}
 
-## Literal (c)
+\subsection{Literal (c)}
 
 ¿Cuál es nuestra predicción con K = 3? ¿Por qué?
 
@@ -246,7 +282,7 @@ kable(
       row_spec(6, background = "red")
 ```
 
-## Literal (d)
+\subsection{Literal (d)}
 
 Si el límite de decisión de Bayes en este problema es muy no lineal, entonces esperaríamos que el mejor valor para K fuera grande o ¿pequeña? ¿Por qué?
 
@@ -256,11 +292,139 @@ Elegir un $K$ relativamente grande implicaría que para la clasificación se tom
 
 El desarrollo en R utilizando la función `knn()` de la librería `class` está disponible en los anexos.
 
-# Ejercicio (4)
+\section{Ejercicio 4}
 
-# Anexos
+\subsection{Literal (a)}
 
-## Ejercicio 3
+Para dar inicio a este desarrollo, en primer lugar se procede a cargar la base de datos propuesta.En este caso se desea proceder de un modo un poco distinto, puesto que, la base datos requerida ya se encuentra dentro de la librería ISLR.
+
+```{r data4, echo=F}
+college <- ISLR::College
+source("PlotsLast4.R")
+```
+
+
+\subsection{Literal (b)}
+
+Como se comentó en el apartado anterior, la base de datos fué cargada desde el paquete ISLR, por lo cual, ya se encuentra correctamente indexada en sus columnas, y los nombres de las universidades no son tomadas como una variable, que es el punto de principal desarrollo en este literal.
+
+
+\subsection{Literal (c)}
+
+\subsubsection{(i)}
+
+Para crear una noción inicial del comportamiento de las variables descritas en el conjunto de datos, se puede hacer uso de la función summary() que muestra algunas características descriptivas de interés como sigue:
+
+```{r sumr1, echo = F}
+kable(summary(college)[,1:6], caption = "Resumen de las variables", align = 'c', longtable = T, booktab = T) %>%
+  kable_styling(position = "center", latex_options = "hold_position")
+```
+
+De acá se puede observar que, la proporción de instituciones privadas en el conjunto de datos es menor que la de universidades públicas. Por otro lado, se puede apreciar que el número medio de estudiantes que aplicaron a las universidades fué de alrededor de 3000 estudiantes, mientras que el número medio de estudiantes aceptados en las universidades es de 2019 estudiantes. Por otro lado, puede verse que el número medio de estudiantes que se matriculan luego de ser aceptados es apreciablemente menor, por lo cuál se podría considerar inicialmente que de los estudiantes que se presentan y son admitidos a las múltiples universidades, pocos realmente se matriculan, sin embargo para probar esto, se necesita acudir a alguna metodología estadística formal.
+
+```{r sumr2, echo = F}
+kable(summary(college)[,7:11], caption = "Resumen de las variables", align = 'c', longtable = T, booktab = T) %>%
+  kable_styling(position = "center", latex_options = "hold_position")
+```
+
+Sobre el tiempo que invierten los estudiantes universitarios en sus estudios, puede notarse que el número medio de aquellos que dedican todo su tiempo a estudiar es mayor que aquellos que dedican solo una parte de su tiempo. 
+
+Sobre las variables que implican costos, se puede ver que el costo medio de los libros ronda los 550 dólares, mientras que los costos de alojamiento y comida son de 4358 dólares en promedio.
+
+```{r sumr3, echo = F}
+kable(summary(college[,13:18]), caption = "Resumen de las variables", align = 'c', longtable = T, booktab = T) %>%
+  kable_styling(position = "center", latex_options = "hold_position")
+```
+
+Por último, de este resumen se puede notar que en promedio, el 72% de los profesores en cada facultad, poseen un título de doctorado.
+
+\subsubsection{(ii)}
+
+PENDIENTE
+
+```{r pairplot, echo=F, fig.align='center', message=F, eval=FALSE}
+GGally::ggpairs(college[, 1:10])
+```
+
+\subsubsection{(iii)}
+
+Se desea analizar la cantidad de estudiantes que provienen del exterior e ingresan a una universidad privada o pública, y para dicha causa se propone el siguiente gráfico:
+
+```{r plotgav, echo=F, fig.align='center'}
+ggplot(college, aes(Private, Outstate, fill = Private)) + 
+  geom_boxplot() + 
+  labs(title = "Número de estudiantes extranjeros que ingresan a \ninstituciones públicas o privadas", fill = "Privado") + 
+  scale_x_discrete(labels = c("No", "Sí")) + 
+  scale_color_manual(labels = c("No", "Sí"), aesthetics = c("fill"), values = c("orange", "green")) +
+  xlab("") +
+  ylab("Proveniente del exterior") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Y así, de lo anterior se puede apreciar que la cantidad de estudiantes extranjeros que provienen del exterior e ingresan a una universidad privada es significativamente mayor a la cantidad de estudiantes que provienen del exterior y deciden estudiar en una institución pública, dado que, las cajas del gráfico no se traslapan. 
+
+\subsubsection{(iv)}
+
+```{r elite, echo=F, fig.align='center', fig.cap="Comparación de la cantidad de estudiantes provenientes del exterior discriminados por el tipo de universidad"}
+college <- college %>%
+  mutate(Elite = factor(if_else(Top10perc > 50, "Sí", "No")))
+
+ggplot(college, aes(Elite, Outstate, fill = Elite)) +
+  geom_boxplot() +
+  labs(y = "Proveniente del exterior", x = "Universidad de Élite",
+       title = "Diagrama de cajas y bigotes para la cantidad de estudiantes \nprovenientes del exterior discriminados por\nla clasificación de la universidad", fill = "Universidad de élite") +
+  theme_minimal() +
+  scale_color_manual(values = c("orange", "green"),
+                     aesthetics = c("fill")) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+\subsubsection{(v)}
+
+```{r histsv, echo = F}
+p1 <- ggplot(college, aes(Books)) + 
+  geom_histogram(color="darkblue", fill="lightblue", binwidth = sturges(college$Books)) + 
+      labs(title = "Precio de los libros") +
+      xlab("Precio en dólares") +
+      ylab("Frecuencia") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5))
+  
+p2 <- ggplot(college, aes(Room.Board)) + 
+  geom_histogram(color="darkorange", fill="gold", binwidth = sturges(college$Room.Board)) + 
+      labs(title = "Precio de la manutención") +
+      xlab("Precio en dólares") +
+      ylab("Frecuencia") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5))
+p3 <- ggplot(college, aes(PhD)) + 
+  geom_histogram(color="darkred", fill="tomato1", binwidth = sturges(college$PhD)) + 
+      labs(title = "Porcentaje de profesores \ncon doctorado en la facultad") +
+      xlab("Porcentaje") +
+      ylab("Frecuencia") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5))
+p4 <- ggplot(college, aes(Grad.Rate)) + 
+  geom_histogram(color="darkgreen", fill="lightgreen", binwidth = sturges(college$Grad.Rate)) + 
+      labs(title = "Porcentaje de estudiantes \nmatriculados que se gradúan") +
+      xlab("Porcentaje") +
+      ylab("Frecuencia") +
+      theme_minimal() + 
+      theme(plot.title = element_text(hjust = 0.5))
+ggpubr::ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2)
+```
+
+Y así, como se mencionó anteriormente en el resultado obtenido con la función summary(), el precio de los libros solicitados en las universidades se concentra en alrededor de los 500 dólares. Asimismo, para el costo de manutención, el precio de la misma ronda en su mayoría los 4300 dólares. 
+
+Por último, en términos de porcentajes, se puede apreciar en los dos últimos gráficos que el porcentaje medio de profesores con doctorado dentro de las faculades es de alrededor del 72% y del mismo modo, el porcentaje de estudiantes matriculados que no desertan se concentra al rededor del 65%.
+
+
+\subsubsection{(vi)}
+
+\section{Anexos}
+
+\subsection{Ejercicio 3}
 
 Se presenta el código utilizado para cuando $K = 3$. Para otro $K$, solo haría falta cambiar el valor de tal variable en el código.
 
