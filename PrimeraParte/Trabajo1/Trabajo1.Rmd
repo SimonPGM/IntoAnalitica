@@ -370,7 +370,25 @@ Y así, de lo anterior se puede apreciar que la cantidad de estudiantes extranje
 college <- college %>%
   mutate(Elite = factor(if_else(Top10perc > 50, "Sí", "No")))
 
-ggplot(college, aes(Elite, Outstate, fill = Elite)) +
+
+pe <- college %>%
+  group_by(Elite) %>%
+  summarize(Frecuencia = n()) %>%
+  mutate(Porcentaje = paste(round(100*Frecuencia/sum(Frecuencia),2), "%")) %>%
+  ggplot(aes(Elite, Frecuencia, fill = Elite, label = Frecuencia))+
+    geom_col()+
+    labs(x = "Universidad de élite", y = "Frecuencia",
+       title = "Distribución de frecuencias para el tipo de universidad")+
+    theme_minimal()+
+    theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_manual(values = c("orange", "green"), 
+                     aesthetics = "fill") +
+  geom_text(position = position_fill(),
+            vjust = -0.5,
+            size = 3) +
+  scale_y_continuous(breaks = seq(0, 900, 100), labels = seq(0, 900, 100))
+
+pe1 <- ggplot(college, aes(Elite, Outstate, fill = Elite)) +
   geom_boxplot() +
   labs(y = "Proveniente del exterior", x = "Universidad de Élite",
        title = "Diagrama de cajas y bigotes para la cantidad de estudiantes \nprovenientes del exterior discriminados por\nla clasificación de la universidad", fill = "Universidad de élite") +
@@ -379,6 +397,69 @@ ggplot(college, aes(Elite, Outstate, fill = Elite)) +
                      aesthetics = c("fill")) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
+
+Para cualquier institución educativa, en particular para una de educación superior, resulta
+de vital importante tener alguna clase de métrica para determinar su calidad como 
+organismo. Dicho esto, se decide tomar como criterio de calidad la cantidad de estudiantes
+que estuvieron en el top 10% en su respectiva promoción de secundaria, clasificando a una
+universidad como de élite si esta posee más del 50% estudiantes que cumplan la característica
+descrita anteriormente.
+
+Se presenta una comparativa entre la cantidad de universidades que son clasificadas como
+de élite.
+
+```{r compelite, echo = F, fig.cap="Comparativa entre las clases de universidades", fig.align='center'}
+
+pe
+
+```
+
+
+Cabe notar la enorme diferencia que hay entre la frecuencia universidades de 
+élite y la frecuencia de las universidades que no los son.
+
+Veamos más de cerca como es la distribución de estas entre instituciones 
+públicas y privadas.
+
+```{r elitepubpriv, echo = F, fig.align='center', fig.cap="Distribución de frecuencias por clase de universidad distinguiendo entre públicas y privadas"}
+
+college %>%
+  mutate(Private = if_else(Private == "Yes", "Sí", "No")) %>%
+  ggplot(aes(x = Elite, fill = Private)) +
+  geom_bar() +
+  labs(x = "Universidad de élite", y = "Frecuencia",
+       title = "Distribución de frecuencias para el tipo de universidad",
+       fill = "Universidad Privada") +
+  scale_color_manual(values = c("orange", "green"),
+                     aesthetics = "fill") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = .5))
+
+```
+
+Curiosamente tanto en universidades de élite como en universidades que no lo
+son, la predominancia la poseen las instituciones educativas de carácter
+privado; hecho que llevaría a plantear la hipótesis de si en Estados Unidos
+existen más universidads privadas que publicas.
+
+Adicional a lo mencinado anteriormente, se considera la comparativa
+entre la cantidad de estudiantes que provienen de fuera teniendo en
+cuenta si la universidad es de élite o no.
+
+```{r eliteout, echo = F, fig.align='center', fig.cap="Comparativa de los estudiantes foráneos discriminando por tipo de universidad"}
+
+pe1
+
+```
+
+
+Como se puede observar en el gráfico anterior, se tiene que para las
+universidades de élite hay mayor variabilidad y la cantidad de estudiantes
+provenientes de fuera se concentra mayormente en valores grandes,
+mientras que en las universidades que no son de élite hay
+igual canitdades muy similares en valores altos y bajos para la cantidad
+de estudiantes foráneos, además, es menos dispersa con respecto a los
+registros que se tienen de las universidades de élite.
 
 \subsubsection{(v)}
 
