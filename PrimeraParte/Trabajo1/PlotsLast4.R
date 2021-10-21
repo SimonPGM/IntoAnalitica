@@ -27,30 +27,13 @@ p42 <- ggplot(college, aes(Top10perc)) +
 
 p43 <- ggplot(college, aes(Top10perc)) +
   geom_histogram(color = "black", fill = "orange",
-                 binwidth = sturges(college$Top10perc)) +
+                 binwidth = sturges(college$Top25perc)) +
   labs(x = "Cantidad de estudiantes que estuvieron en el top 25% de H.S.",
        y = "Frecuencia",
        title = "Histograma para la cantidad de estudiantes\nen el top 25% de H.S.")+
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
-
-p44 <- ggplot(college, aes(Elite, PhD, fill = Elite)) +
-  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
-  theme_minimal()+
-  labs(x = "Universidad de élite",
-       y = "Cantidad de estudiantes con PhD",
-       fill = "Unversidad de élite",
-       title = "Gráfico de violín para la cantidad\nde estudiantes con PhD")+
-  theme(plot.title = element_text(hjust = 0.5))
-
-p46 <- ggplot(college, aes(PhD, Expend, color = Elite)) +
-  geom_point() +
-  labs(x = "Estudiantes con PhD",
-       y = "Gastos que realiza la universidad",
-       title = "Gráfico de y vs x")+
-  theme_minimal()+
-  theme(plot.title = element_text(hjust = 0.5))
 
 p47 <- college %>%
   mutate(Private = factor(if_else(Private == "Yes", "Universidad privada",

@@ -399,7 +399,7 @@ pe1 <- ggplot(college, aes(Elite, Outstate, fill = Elite)) +
 ```
 
 Para cualquier institución educativa, en particular para una de educación superior, resulta
-de vital importante tener alguna clase de métrica para determinar su calidad como 
+de vital importancia tener alguna clase de métrica para determinar su calidad como 
 organismo. Dicho esto, se decide tomar como criterio de calidad la cantidad de estudiantes
 que estuvieron en el top 10% en su respectiva promoción de secundaria, clasificando a una
 universidad como de élite si esta posee más del 50% estudiantes que cumplan la característica
@@ -456,8 +456,7 @@ pe1
 Como se puede observar en el gráfico anterior, se tiene que para las
 universidades de élite hay mayor variabilidad y la cantidad de estudiantes
 provenientes de fuera se concentra mayormente en valores grandes,
-mientras que en las universidades que no son de élite hay
-igual canitdades muy similares en valores altos y bajos para la cantidad
+mientras que en las universidades que no son de élite hay cantidades similares tanto en valores altos como en valores bajos para la cantidad
 de estudiantes foráneos, además, es menos dispersa con respecto a los
 registros que se tienen de las universidades de élite.
 
@@ -502,6 +501,90 @@ Por último, en términos de porcentajes, se puede apreciar en los dos últimos 
 
 
 \subsubsection{(vi)}
+
+```{r aux, echo=F}
+p44 <- ggplot(college, aes(Elite, PhD, fill = Elite)) +
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
+  theme_minimal()+
+  labs(x = "Universidad de élite",
+       y = "Porcentaje de profesores con PhD",
+       fill = "Unversidad de élite",
+       title = "Gráfico de violín para la proporción\nde profesores con PhD")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p46 <- ggplot(college, aes(PhD, Expend, color = Elite)) +
+  geom_point() +
+  labs(x = "Porcentaje de profesores con PhD",
+       y = "Gastos que realiza la universidad",
+       title = "Gráfico de y vs x")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+LLegados a este punto se presentan algunos resultados en los que se 
+encuentra información interesante que puede dar paso a futuras investigaciones
+con respecto a aspectos tocados de manera directa o indirecta en dichos
+resultados.
+
+```{r result1, echo=F, fig.align='center', fig.cap="Gráfico de dispersión para los estuidantes matriculados vs los aceptados"}
+p41
+```
+
+Se puede observar un claro patrón de corneta en los puntos, es decir,
+a medida que aumenta la cantidad de estudiantes aceptados, la cantidad
+de estudiantes matriculados se vuelve más dispersa.
+
+```{r result2, echo = F, fig.align='center', fig.cap="Comparación de distribuciones en el top de porcentajes"}
+ggpubr::ggarrange(p42, p43,  ncol = 1, nrow = 2)
+```
+
+Se pueden observar distribuciones muy similares, no en frecuencia,
+pero sí en forma, por lo que sería interesante realizar inferencias
+en son de verificar o desmentir la hipótesis de que tanto para la
+cantidad de estudiantes del top 10% y del top 25% en las universidades
+se puede ajustar un modelo probabilístico de la misma familia de
+distribuciones y si existen diferencias significativas entre los
+parámetros que definen a dicha familia.
+
+```{r result3, echo = F, fig.align='center', fig.cap="Distribución y variación del porcentaje de docentes con PhD"}
+
+p44
+
+```
+
+Del gráfico se puede observar que en promedio las universidades de élite
+poseen una proporción mayor de docentes con PhD, además,
+se tiene una mayor concentración de proporciones para dicho atributo,
+mientras que en las universidades que no son de élite presentan una
+dispersión mayor.
+
+```{r resutl4, echo = F, fig.cap="Comparativa entre gastos y profesores con PhD discriminando por universidades", fig.align='center'}
+
+p46
+
+```
+
+
+Se puede notar que a medida que las universidades tienen un mayor 
+porcentaje de docentes con el título de doctor, los gastos tienden a aumentar,
+sin embargo, para las universidades de élite la tasa de crecimiento de los
+gastos es visiblemente mayor que en las universidades que no lo son.
+
+
+```{r result5, echo = F, fig.align='center', fig.cap="Distribución para la cantidad de aspirantes por tipo de universidad"}
+
+p47
+
+```
+
+Se observa una característica muy peculiar de dichas distribuciones y es que
+en las universidades privadas siempre se presenta una mayor frecuencia,
+a pesar de que las universidades públicas resultan ser más económicas.
+Teniendo en cuenta esto, surge naturalmente el deseo de cuantificar que
+tan grande es la brecha entre educación superior pública y privada o
+en caso tal de que no se encuentren diferencias, determinar la causa
+del fenómeno que se percibe en el gráfico anterior.
 
 \section{Anexos}
 
