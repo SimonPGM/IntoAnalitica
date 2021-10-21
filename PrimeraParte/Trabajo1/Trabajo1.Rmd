@@ -51,7 +51,7 @@ una variable continua en distintas categorías.
 
 ```{r boxplot, echo=F, fig.align='center'}
 datos <- read.csv("datosage_6.csv", header = T) %>%
-  transmute(X, id, afh, age, gender = as.factor(gender))
+  mutate(gender = as.factor(gender))
 
 ggplot(data = datos) +
   geom_boxplot(mapping = aes(x = gender, y = afh, color = gender)) +
@@ -83,7 +83,7 @@ ggplot(data = datos, aes(x = afh)) +
 ```
 
 El histograma para afh muestra una ligera asimetría negativa, sin embargo no se puede
-afirmar si el pqueño sesgo es estadísticamente significativo porque en casos que no son
+afirmar si el pequeño sesgo es estadísticamente significativo porque en casos que no son
 tan evidentes la decisión depende bastante del analista, lo cual sugiere que valdría
 la pena hacer un test formal para contrastar: 
 
@@ -350,6 +350,98 @@ El desarrollo en R utilizando la función `knn()` de la librería `class` está 
 # Ejercicio (4)
 
 # Anexos
+
+## Ejercicio 2
+
+Código para el análisis descriptivo y construcción de modelos
+
+```{r  fig.align='center'}
+datos <- read.csv("datosage_6.csv", header = T) %>%
+  mutate(gender = as.factor(gender))
+
+ggplot(data = datos) +
+  geom_boxplot(mapping = aes(x = gender, y = afh, color = gender)) +
+  scale_x_discrete(labels = c("Femenino", "Masculino")) + 
+  scale_colour_discrete(labels = c("F", "M")) +
+  labs(colour = "Género") + 
+  xlab("Género") +
+  theme_minimal()
+```
+
+
+```{r fig.align='center'}
+ggplot(data = datos, aes(x = afh)) +
+  geom_histogram(binwidth = 5, 
+                 color = "darkgreen", fill = "lightgreen") +
+  ylab("Frecuencia") +
+  theme_minimal()
+```
+
+
+```{r}
+#Partiendo los datos aleatoriamente para la modelacion
+set.seed(3435)
+indexes <- sample(1:dim(datos)[1], 0.8 * dim(datos)[1])
+
+#Particion de los datos
+train_data <- datos[indexes, ] %>%
+  select(afh, gender) %>%
+  mutate(gender = as.numeric(gender))
+
+test_data <- datos[-indexes, ] %>%
+  select(gender) %>%
+  mutate(gender = as.numeric(gender))
+
+test_response <- datos[-indexes, ] %>%
+  select(afh) %>%
+  unlist() %>%
+  as.numeric()
+
+#NOTA: del factor con niveles 0 y 1, siendo numericos se convierten en 1 y 2
+#respectivamente
+```
+
+
+```{r warning=F}
+#Se usa datos en los indices necesarios porque en dicha bd, gender es un factor
+#(lm sí soporta factores)
+param <- lm(afh ~ gender, data = datos[indexes, c("afh", "gender")])
+```
+
+
+```{r warning=F, message=F}
+spans <- seq(from = 0.05, to = 0.95, by = 0.025)
+mse <- c()
+for(i in spans){
+  mod_actual <- loess(afh ~ gender, data = train_data, span = i)
+  mse <- append(mse, Metrics::mse(train_data$afh, fitted(mod_actual)))
+}
+#Nota: Para los spans escogidos se cumple que a partir de 0.575 el mse de
+#entrenamiento siempre es 31.51
+```
+
+
+```{r warning=F, message=F}
+#Aqui si se usa la base train porque gender es numerica para que loess funcione
+nparam <- loess(afh ~ gender, data = train_data)
+```
+
+
+```{r}
+#Modelo lineal
+afh_hat_param <- predict(param, data.frame(gender =  datos[-indexes, 5]))
+mse_param <- Metrics::mse(test_response, afh_hat_param)
+
+#Modelo loess (No parametrico)
+afh_hat_np <- predict(nparam, test_data)
+mse_np <- Metrics::mse(test_response, afh_hat_np)
+
+#Tabla comparativa
+comparacion <- data.frame(MSE = c(mse_param, mse_np) %>% round(3))
+rownames(comparacion) <- c("Lineal", "Loess")
+kable(comparacion, longtable = T, escape = F, booktabs = T)
+```
+
 
 ## Ejercicio 3
 
