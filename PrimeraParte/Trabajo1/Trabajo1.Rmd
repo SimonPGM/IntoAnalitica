@@ -49,7 +49,7 @@ entre dicha variable y afh no sería adecuado, por lo que se realiza un
 diagrama de cajas el cual logra representar de forma más clara el comportamiento de
 una variable continua en distintas categorías.
 
-```{r boxplot, echo=F, fig.align='center'}
+```{r boxplot, echo=F, fig.align='center', fig.cap='Diagrama de cajas de afh vs género'}
 datos <- read.csv("datosage_6.csv", header = T) %>%
   mutate(gender = as.factor(gender))
 
@@ -57,9 +57,10 @@ ggplot(data = datos) +
   geom_boxplot(mapping = aes(x = gender, y = afh, color = gender)) +
   scale_x_discrete(labels = c("Femenino", "Masculino")) + 
   scale_colour_discrete(labels = c("F", "M")) +
-  labs(colour = "Género") + 
+  labs(colour = "Género", title = "afh vs género") + 
   xlab("Género") +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 De este diagrama de cajas se pueden sacar algunas conclusiones:
@@ -74,17 +75,19 @@ sugiriendo que una distribución simétrica se ajustaría bien a los datos.
 Dicho lo anterior se procede a graficar un histograma de la variable respuesta o output
 sin discriminar por género:
 
-```{r histograma, echo=F, fig.align='center'}
+```{r histograma, echo=F, fig.align='center', fig.cap='Histograma de afh'}
 ggplot(data = datos, aes(x = afh)) +
   geom_histogram(binwidth = 5, 
                  color = "darkgreen", fill = "lightgreen") +
   ylab("Frecuencia") +
-  theme_minimal()
+  labs(title = "Distribución de afh") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 El histograma para afh muestra una ligera asimetría negativa, sin embargo no se puede
-afirmar si el pequeño sesgo es estadísticamente significativo porque en casos que no son
-tan evidentes la decisión depende bastante del analista, lo cual sugiere que valdría
+afirmar si el pequeño sesgo es estadísticamente significativo, porque en casos que no
+son tan evidentes la decisión depende bastante del analista, lo cual sugiere que valdría
 la pena hacer un test formal para contrastar: 
 
 $$
@@ -204,14 +207,15 @@ mse_np <- Metrics::mse(test_response, afh_hat_np)
 #Tabla comparativa
 comparacion <- data.frame(MSE = c(mse_param, mse_np) %>% round(3))
 rownames(comparacion) <- c("Lineal", "Loess")
-kable(comparacion, longtable = T, escape = F, booktabs = T)
+kable(comparacion, longtable = T, escape = F, booktabs = T,
+      caption = "MSE de los modelos")
 ```
 
 Observe que ambos modelos tienen el mismo MSE por lo cual tienen el mismo poder
 predictivo en la situación dada.
 
 En este caso es más adecuado escoger el modelo lineal porque tiene el mismo poder
-predictivo que el loess, sin embargo la interpretabilidad de este último es demasiado compleja (por no decir que no se puede interpretar). Por otro lado, una de las mayores ventajas de los modelos lineales es que son muy interpretables por lo cual este le saca ventaja al modelo loess en esta situación particular y por eso se concluye que es el adecuado en este caso.
+predictivo que el loess, sin embargo la interpretabilidad de este último es demasiado compleja (por no decir que no se puede interpretar). 
 
 # Ejercicio (3) 
 
@@ -355,7 +359,7 @@ El desarrollo en R utilizando la función `knn()` de la librería `class` está 
 
 Código para el análisis descriptivo y construcción de modelos
 
-```{r  fig.align='center'}
+```{r  fig.align='center', fig.cap='Diagrama de cajas de afh vs género'}
 datos <- read.csv("datosage_6.csv", header = T) %>%
   mutate(gender = as.factor(gender))
 
@@ -363,18 +367,21 @@ ggplot(data = datos) +
   geom_boxplot(mapping = aes(x = gender, y = afh, color = gender)) +
   scale_x_discrete(labels = c("Femenino", "Masculino")) + 
   scale_colour_discrete(labels = c("F", "M")) +
-  labs(colour = "Género") + 
+  labs(colour = "Género", title = "afh vs género") + 
   xlab("Género") +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
-```{r fig.align='center'}
+```{r fig.align='center', fig.cap='Histograma de afh'}
 ggplot(data = datos, aes(x = afh)) +
   geom_histogram(binwidth = 5, 
                  color = "darkgreen", fill = "lightgreen") +
   ylab("Frecuencia") +
-  theme_minimal()
+  labs(title = "Distribución de afh") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
