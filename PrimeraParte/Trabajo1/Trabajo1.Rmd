@@ -86,44 +86,49 @@ Teniendo en cuenta que la variable género es cualitativa, un diagrama de disper
 diagrama de cajas el cual logra representar de forma más clara el comportamiento de
 una variable continua en distintas categorías.
 
-```{r boxplot, echo=F, fig.align='center'}
+```{r boxplot, echo=F, fig.align='center', fig.cap='Diagrama de cajas de afh vs género'}
 datos <- read.csv("datosage_6.csv", header = T) %>%
-  transmute(X, id, afh, age, gender = as.factor(gender))
+  mutate(gender = as.factor(gender))
 
 ggplot(data = datos) +
   geom_boxplot(mapping = aes(x = gender, y = afh, color = gender)) +
   scale_x_discrete(labels = c("Femenino", "Masculino")) + 
   scale_colour_discrete(labels = c("F", "M")) +
-  labs(colour = "Género") + 
+  labs(colour = "Género", title = "afh vs género") + 
   xlab("Género") +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 De este diagrama de cajas se pueden sacar algunas conclusiones:
 
-* Las cajas se traslapan por lo que no hay evidencia muestral suficiente para pensar
-que el afh medio de los hombres sea diferente al de las mujeres.
-* La amplitud de las cajas es muy similar sugiriendo que la variabilidad no cambia 
+\begin{itemize}
+
+\item Las cajas se traslapan por lo que se puede pensar que el afh promedio de los hombres 
+no es diferente respecto al de las mujeres.
+\item La amplitud de las cajas es muy similar sugiriendo que la variabilidad no cambia 
 según el género.
-* La cantidad de datos que están por encima de la mediana es muy similar en ambos casos 
+\item La mediana se encuentra en el centro de las cajas en ambos casos, 
 sugiriendo que una distribución simétrica se ajustaría bien a los datos.
 
-Dicho lo anterior se procede a graficar un histograma de la variable respuesta o output
-sin discriminar por género
+\end{itemize}
 
-```{r histograma, echo=F, fig.align='center'}
+Dicho lo anterior se procede a graficar un histograma de la variable respuesta o output
+sin discriminar por género:
+
+```{r histograma, echo=F, fig.align='center', fig.cap='Histograma de afh'}
 ggplot(data = datos, aes(x = afh)) +
-  geom_histogram(#aes(y = ..density..), 
-                 binwidth = 5, 
+  geom_histogram(binwidth = 5, 
                  color = "darkgreen", fill = "lightgreen") +
-  #geom_density(alpha = .2) +
   ylab("Frecuencia") +
-  theme_minimal()
+  labs(title = "Distribución de afh") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-El histograma para afh muestra una pequeña asimetría negativa, sin embargo no se puede
-afirmar si el ligero sesgo es estadísticamente significativo porque en casos que no son
-tan evidentes la decisión depende bastante del analista, lo cual sugiere que valdría
+El histograma para afh muestra una ligera asimetría negativa, sin embargo no se puede
+afirmar si el pequeño sesgo es estadísticamente significativo, porque en casos que no
+son tan evidentes la decisión depende bastante del analista, lo cual sugiere que valdría
 la pena hacer un test formal para contrastar: 
 
 $$
@@ -135,6 +140,10 @@ H_1: \text{La variable afh NO se distribuye normal}
 \end{aligned}
 $$
 
+Recuerde que uno de los supuestos básicos del modelo de regresión lineal es que la
+variable respuesta se distribuya normal, lo cual refuerza la idea de probar dicha 
+hipótesis.
+
 Cabe resaltar que lo visto en el boxplot fue un análisis discriminando por género y
 la normalidad en dimensiones bajas no implica la de dimensiones altas.
 
@@ -144,25 +153,116 @@ la normalidad en dimensiones bajas no implica la de dimensiones altas.
 
 \item Todas las entradas de la variable edad es 6 lo cual no aporta ningún tipo de
 información útil para análisis descriptivo o modelación.
-\item Las bases de datos relacionales tiene un atributo obligatorio (columna) conocido 
-como clave primaria la cual ayuda a identificar de forma única a cada fila; teniendo 
-en cuenta que la variable id tiene 150 entradas únicas (el mismo número de
-observaciones) se asume que está variable realmente es la clave primaria de esta base
-de datos y aunque pudiera existir algún tipo de correlación entre esta y el output,
-esto se debería más a la casualidad que a la causalidad.
+\item Las bases de datos relacionales tiene un atributo obligatorio (columna ó combinación
+de columnas) conocido como clave primaria la cual ayuda a identificar de forma única a
+cada fila; teniendo en cuenta que las variable id y X tienen 150 entradas únicas 
+(el mismo número de observaciones) se asume que estas variables forman la clave
+primaria de esta base de datos y aunque pudiera existir algún tipo de correlación 
+entre estas y el output, se debería más a la casualidad que a la causalidad.
 
 \end{itemize}
 \subsection{Modelos considerados}
 
-En la construcción de modelos se considera la regresión lineal simple como modelo paramétrico usando afh como variable respuesta y al género como covariable mientras
+En la etapa de modelación, se considera la regresión lineal simple como modelo
+paramétrico usando afh como variable respuesta y al género como covariable mientras
 que la regresión loess se usa como modelo no paramétrico.
 
-```{r modelos, echo=F}
-param <- lm(afh ~ gender, data = datos)
-#nparam <- loess(afh ~ gender, data = datos)
+Para la construcción de modelos se tomó el 80\% de observaciones de la base de datos
+en la modelación y se dejó el 20\% como datos de prueba.
+
+```{r train_test, echo=F}
+#Partiendo los datos aleatoriamente para la modelacion
+set.seed(3435)
+indexes <- sample(1:dim(datos)[1], 0.8 * dim(datos)[1])
+
+#Particion de los datos
+train_data <- datos[indexes, ] %>%
+  select(afh, gender) %>%
+  mutate(gender = as.numeric(gender))
+
+test_data <- datos[-indexes, ] %>%
+  select(gender) %>%
+  mutate(gender = as.numeric(gender))
+
+test_response <- datos[-indexes, ] %>%
+  select(afh) %>%
+  unlist() %>%
+  as.numeric()
+
+#NOTA: del factor con niveles 0 y 1, siendo numericos se convierten en 1 y 2
+#respectivamente
 ```
 
+
+```{r parametrico, echo=F, warning=F}
+#Se usa datos en los indices necesarios porque en dicha bd, gender es un factor
+#(lm sí soporta factores)
+param <- lm(afh ~ gender, data = datos[indexes, c("afh", "gender")])
+```
+
+Para la construcción del modelo no paramétrico, se tomaron distintos valores del span
+y se escogió el que produjo un menor MSE en los datos de entrenamiento.
+
+```{r busqueda_span, echo=F, warning=F, message=F}
+spans <- seq(from = 0.05, to = 0.95, by = 0.025)
+mse <- c()
+for(i in spans){
+  mod_actual <- loess(afh ~ gender, data = train_data, span = i)
+  mse <- append(mse, Metrics::mse(train_data$afh, fitted(mod_actual)))
+}
+#Nota: Para los spans escogidos se cumple que a partir de 0.575 el mse de
+#entrenamiento siempre es 31.51
+```
+
+Luego de revisar los valores del MSE para diferentes valores de span, se encontró algo
+curioso; para valores de span menores a 0.575 se produjieron NaN mientras que para
+valores mayores o iguales a 0.575 el MSE de entrenamiento fue el mismo para todos los
+modelos con un valor de 31.51, en resumen:
+
+$$
+MSE(\text{Span}) = \begin{cases}
+\text{NaN} \hspace{.2in} \text{Span} \ < \ 0.575 \\
+31.51 \hspace{.2in} \text{Span}  \geq \ 0.575
+\end{cases}
+$$
+Como el valor del Span no importa para valores mayores o iguales 0.575 en este caso
+particular, se escoge uno de 0.75 simplemente por buena práctica, ya que si se le 
+añade demasiada flexibilidad al modelo este tendría mucha varianza porque sería 
+muy sensible a pequeños cambios en los datos.
+
+```{r mod_no_parametrico, echo=F, warning=F, message=F}
+#Aqui si se usa la base train porque gender es numerica para que loess funcione
+nparam <- loess(afh ~ gender, data = train_data)
+```
+
+Dicho todo esto, se procede a realizar predicciones con los datos de prueba y
+posteriormente se realiza el calculo de los MSE correspondientes los cuales se 
+presentan en la siguiente tabla.
+
+```{r predicts, echo=F}
+#Modelo lineal
+afh_hat_param <- predict(param, data.frame(gender =  datos[-indexes, 5]))
+mse_param <- Metrics::mse(test_response, afh_hat_param)
+
+#Modelo loess (No parametrico)
+afh_hat_np <- predict(nparam, test_data)
+mse_np <- Metrics::mse(test_response, afh_hat_np)
+
+#Tabla comparativa
+comparacion <- data.frame(MSE = c(mse_param, mse_np) %>% round(3))
+rownames(comparacion) <- c("Lineal", "Loess")
+kable(comparacion, longtable = T, escape = F, booktabs = T,
+      caption = "MSE de los modelos")
+```
+
+Observe que ambos modelos tienen el mismo MSE por lo cual tienen el mismo poder
+predictivo en la situación dada.
+
+En este caso es más adecuado escoger el modelo lineal porque tiene el mismo poder
+predictivo que el loess, sin embargo la interpretabilidad de este último es demasiado compleja (por no decir que no se puede interpretar). 
+
 \section{Ejercicio 3}
+
 
 Ejercicio 7, texto guía (primera edición), página 53. Hágalo también en R.
 
@@ -627,6 +727,101 @@ en caso tal de que no se encuentren diferencias, determinar la causa
 del fenómeno que se percibe en el gráfico anterior.
 
 \section{Anexos}
+
+\subsection{Ejercicio 2}
+
+Código para el análisis descriptivo y construcción de modelos.
+
+```{r  fig.align='center', fig.cap='Diagrama de cajas de afh vs género'}
+datos <- read.csv("datosage_6.csv", header = T) %>%
+  mutate(gender = as.factor(gender))
+
+ggplot(data = datos) +
+  geom_boxplot(mapping = aes(x = gender, y = afh, color = gender)) +
+  scale_x_discrete(labels = c("Femenino", "Masculino")) + 
+  scale_colour_discrete(labels = c("F", "M")) +
+  labs(colour = "Género", title = "afh vs género") + 
+  xlab("Género") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+```{r fig.align='center', fig.cap='Histograma de afh'}
+ggplot(data = datos, aes(x = afh)) +
+  geom_histogram(binwidth = 5, 
+                 color = "darkgreen", fill = "lightgreen") +
+  ylab("Frecuencia") +
+  labs(title = "Distribución de afh") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+```{r}
+#Partiendo los datos aleatoriamente para la modelacion
+set.seed(3435)
+indexes <- sample(1:dim(datos)[1], 0.8 * dim(datos)[1])
+
+#Particion de los datos
+train_data <- datos[indexes, ] %>%
+  select(afh, gender) %>%
+  mutate(gender = as.numeric(gender))
+
+test_data <- datos[-indexes, ] %>%
+  select(gender) %>%
+  mutate(gender = as.numeric(gender))
+
+test_response <- datos[-indexes, ] %>%
+  select(afh) %>%
+  unlist() %>%
+  as.numeric()
+
+#NOTA: del factor con niveles 0 y 1, siendo numericos se convierten en 1 y 2
+#respectivamente
+```
+
+
+```{r warning=F}
+#Se usa datos en los indices necesarios porque en dicha bd, gender es un factor
+#(lm sí soporta factores)
+param <- lm(afh ~ gender, data = datos[indexes, c("afh", "gender")])
+```
+
+
+```{r warning=F, message=F}
+spans <- seq(from = 0.05, to = 0.95, by = 0.025)
+mse <- c()
+for(i in spans){
+  mod_actual <- loess(afh ~ gender, data = train_data, span = i)
+  mse <- append(mse, Metrics::mse(train_data$afh, fitted(mod_actual)))
+}
+#Nota: Para los spans escogidos se cumple que a partir de 0.575 el mse de
+#entrenamiento siempre es 31.51
+```
+
+
+```{r warning=F, message=F}
+#Aqui si se usa la base train porque gender es numerica para que loess funcione
+nparam <- loess(afh ~ gender, data = train_data)
+```
+
+
+```{r}
+#Modelo lineal
+afh_hat_param <- predict(param, data.frame(gender =  datos[-indexes, 5]))
+mse_param <- Metrics::mse(test_response, afh_hat_param)
+
+#Modelo loess (No parametrico)
+afh_hat_np <- predict(nparam, test_data)
+mse_np <- Metrics::mse(test_response, afh_hat_np)
+
+#Tabla comparativa
+comparacion <- data.frame(MSE = c(mse_param, mse_np) %>% round(3))
+rownames(comparacion) <- c("Lineal", "Loess")
+kable(comparacion, longtable = T, escape = F, booktabs = T)
+```
+
 
 \subsection{Ejercicio 3}
 
