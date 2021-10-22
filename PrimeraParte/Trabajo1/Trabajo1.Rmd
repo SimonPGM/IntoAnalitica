@@ -113,7 +113,7 @@ sugiriendo que una distribución simétrica se ajustaría bien a los datos.
 
 \end{itemize}
 
-Dicho lo anterior se procede a graficar un histograma de la variable respuesta o output
+Dicho lo anterior se procede a graficar un histograma de la variable respuesta u output
 sin discriminar por género:
 
 ```{r histograma, echo=F, fig.align='center', fig.cap='Histograma de afh'}
@@ -147,13 +147,15 @@ hipótesis.
 Cabe resaltar que lo visto en el boxplot fue un análisis discriminando por género y
 la normalidad en dimensiones bajas no implica la de dimensiones altas.
 
+\newpage
+
 \textbf{Notas} 
 
 \begin{itemize}
 
 \item Todas las entradas de la variable edad es 6 lo cual no aporta ningún tipo de
 información útil para análisis descriptivo o modelación.
-\item Las bases de datos relacionales tiene un atributo obligatorio (columna ó combinación
+\item Las bases de datos relacionales tienen un atributo obligatorio (columna ó combinación
 de columnas) conocido como clave primaria la cual ayuda a identificar de forma única a
 cada fila; teniendo en cuenta que las variable id y X tienen 150 entradas únicas 
 (el mismo número de observaciones) se asume que estas variables forman la clave
@@ -220,9 +222,9 @@ valores mayores o iguales a 0.575 el MSE de entrenamiento fue el mismo para todo
 modelos con un valor de 31.51, en resumen:
 
 $$
-MSE(\text{Span}) = \begin{cases}
-\text{NaN} \hspace{.2in} \text{Span} \ < \ 0.575 \\
-31.51 \hspace{.2in} \text{Span}  \geq \ 0.575
+MSE(\text{span}) = \begin{cases}
+\text{NaN} \hspace{.2in} \text{span} \ < \ 0.575 \\
+31.51 \hspace{.2in} \text{span}  \geq \ 0.575
 \end{cases}
 $$
 Como el valor del Span no importa para valores mayores o iguales 0.575 en este caso
@@ -259,7 +261,10 @@ Observe que ambos modelos tienen el mismo MSE por lo cual tienen el mismo poder
 predictivo en la situación dada.
 
 En este caso es más adecuado escoger el modelo lineal porque tiene el mismo poder
-predictivo que el loess, sin embargo la interpretabilidad de este último es demasiado compleja (por no decir que no se puede interpretar). 
+predictivo que el loess, sin embargo la interpretabilidad de este último es demasiado compleja (por no decir que no se puede interpretar), además, el modelo lineal es 
+bastante más parsimonioso que el modelo no paramétrico. 
+
+\newpage
 
 \section{Ejercicio 3}
 
@@ -283,7 +288,8 @@ kable(
       booktabs = T,
       col.names = c("Obs.", "$X_1$", "$X_2$", "$X_3$", "$Y$"),
       align = rep('c', 5),
-      escape = F
+      escape = F,
+      caption = "Conjunto de datos ejercicio 3"
       ) %>%
       kable_styling(latex_options = c("HOLD_position")) 
 ```
@@ -304,7 +310,7 @@ datos3 <- datos3 %>%
 
 ```
 
-Se procede a calcular la distancia euclideana con respecto a $X_1 = X_2 = X_3 = 0$ para cada una de las observaciones de la forma $(X_{1i}, X_{2i}, X_{3i}); i = 1, ..., 6$ como: 
+Se procede a calcular la distancia euclideana con respecto a $X_1 = X_2 = X_3 = 0$ para cada una de las observaciones de la forma $(X_{1i}, X_{2i}, X_{3i}); \  i = 1, ..., 6$ como: 
 
 $$ \text{Distancia Euclideana Obs. i} = \sqrt{(X_{1i} - 0)^2 + (X_{2i} - 0)^2 + (X_{3i} - 0)^2}$$
 
@@ -314,7 +320,8 @@ kable(
       booktabs = T,
       col.names = c("Obs.", "$X_1$", "$X_2$", "$X_3$", "Distancia euclideana", "$Y$"),
       align = rep('c', 5),
-      escape = F
+      escape = F,
+      caption = "Distancias euclidianas"
       ) %>%
       kable_styling(latex_options = c("HOLD_position")) 
 ```
@@ -323,7 +330,7 @@ kable(
 
 ¿Cuál es nuestra predicción con K = 1? ¿Por qué?
 
-Note que para el primer literal se NO se realizó una estandarización de los datos. Siguiendo las recomendaciones proporcionadas en las sesiones de clase, se realiza nuevamente lo solicitado en el primer literal con una base de datos estandarizada (incluyendo el nuevo dato sobre el cual se quiere predecir.). 
+Note que para el primer literal \textbf{NO} se realizó una estandarización de los datos. Siguiendo las recomendaciones proporcionadas en las sesiones de clase, se realiza nuevamente lo solicitado en el primer literal con una base de datos estandarizada (incluyendo el nuevo dato sobre el cual se quiere predecir.). 
 
 Se escala cada una de las variables restando por su media y diviendo sobre su desviación estándar, se obtiene ($X_1', X_2', X_3'$).
 
@@ -388,7 +395,7 @@ kable(
 
 \subsection{Literal (d)}
 
-Si el límite de decisión de Bayes en este problema es muy no lineal, entonces esperaríamos que el mejor valor para K fuera grande o ¿pequeña? ¿Por qué?
+Si el límite de decisión de Bayes en este problema es muy no lineal, entonces ¿esperaríamos que el mejor valor para K fuera grande o pequeña? ¿Por qué?
 
 Un límite de decisión de Bayes altamente NO lineal implica que zonas espaciales donde una nueva observación es clasificada a la categoría verde están muy cerca (colindan) con zonas espaciales donde nuevas observaciones son clasificadas como rojas. 
 
@@ -396,11 +403,13 @@ Elegir un $K$ relativamente grande implicaría que para la clasificación se tom
 
 El desarrollo en R utilizando la función `knn()` de la librería `class` está disponible en los anexos.
 
+\newpage
+
 \section{Ejercicio 4}
 
 \subsection{Literal (a)}
 
-Para dar inicio a este desarrollo, en primer lugar se procede a cargar la base de datos propuesta.En este caso se desea proceder de un modo un poco distinto, puesto que, la base datos requerida ya se encuentra dentro de la librería ISLR.
+Para dar inicio a este desarrollo, en primer lugar se procede a cargar la base de datos propuesta. En este caso se desea proceder de un modo un poco distinto, puesto que, la base datos requerida ya se encuentra dentro de la librería ISLR.
 
 ```{r data4, echo=F}
 college <- ISLR::College
@@ -410,21 +419,21 @@ source("PlotsLast4.R")
 
 \subsection{Literal (b)}
 
-Como se comentó en el apartado anterior, la base de datos fué cargada desde el paquete ISLR, por lo cual, ya se encuentra correctamente indexada en sus columnas, y los nombres de las universidades no son tomadas como una variable, que es el punto de principal desarrollo en este literal.
+Como se comentó en el apartado anterior, la base de datos fue cargada desde el paquete ISLR, por lo cual, ya se encuentra correctamente indexada en sus columnas, y los nombres de las universidades no son tomadas como una variable, que es el punto de principal desarrollo en este literal.
 
 
 \subsection{Literal (c)}
 
 \subsubsection{(i)}
 
-Para crear una noción inicial del comportamiento de las variables descritas en el conjunto de datos, se puede hacer uso de la función summary() que muestra algunas características descriptivas de interés como sigue:
+Para crear una noción inicial del comportamiento de las variables descritas en el conjunto de datos, se puede hacer uso de la función `summary()` que muestra algunas características descriptivas de interés como sigue:
 
 ```{r sumr1, echo = F}
 kable(summary(college)[,1:6], caption = "Resumen de las variables", align = 'c', longtable = T, booktab = T) %>%
   kable_styling(position = "center", latex_options = "hold_position")
 ```
 
-De acá se puede observar que, la proporción de instituciones privadas en el conjunto de datos es menor que la de universidades públicas. Por otro lado, se puede apreciar que el número medio de estudiantes que aplicaron a las universidades fué de alrededor de 3000 estudiantes, mientras que el número medio de estudiantes aceptados en las universidades es de 2019 estudiantes. Por otro lado, puede verse que el número medio de estudiantes que se matriculan luego de ser aceptados es apreciablemente menor, por lo cuál se podría considerar inicialmente que de los estudiantes que se presentan y son admitidos a las múltiples universidades, pocos realmente se matriculan, sin embargo para probar esto, se necesita acudir a alguna metodología estadística formal.
+De acá se puede observar que, la proporción de instituciones privadas en el conjunto de datos es menor que la de universidades públicas. Por otro lado, se puede apreciar que el número medio de estudiantes que aplicaron a las universidades fue de alrededor de 3000 estudiantes, mientras que el número medio de estudiantes aceptados en las universidades es de 2019 estudiantes. Por otro lado, puede verse que el número medio de estudiantes que se matriculan luego de ser aceptados es apreciablemente menor, por lo cuál se podría considerar inicialmente que de los estudiantes que se presentan y son admitidos a las múltiples universidades, pocos realmente se matriculan, sin embargo para probar esto, se necesita acudir a alguna metodología estadística formal.
 
 ```{r sumr2, echo = F}
 kable(summary(college)[,7:11], caption = "Resumen de las variables", align = 'c', longtable = T, booktab = T) %>%
@@ -452,7 +461,8 @@ pairplot <- GGally::ggpairs(college[, 1:10],
                               color = "cyan", fill = "black")
                               ),
                 upper = list(continuous = GGally::wrap("cor", size = 2.5)),
-                columnLabels = as.character(1:10)) +
+                columnLabels = as.character(1:10),
+                title = "Matriz de gráficos para las primeras diez variables del conjunto de datos") +
   theme_minimal()
 pairplot
 ```
@@ -488,9 +498,9 @@ diagrama de dispersión.
 
 \subsubsection{(iii)}
 
-Se desea analizar la cantidad de estudiantes que provienen del exterior e ingresan a una universidad privada o pública, y para dicha causa se propone el siguiente gráfico:
+Se desea analizar la cantidad de estudiantes que provienen del exterior e ingresan a una universidad privada o pública, y para dicha causa se propone el siguiente gráfico
 
-```{r plotgav, echo=F, fig.align='center'}
+```{r plotgav, echo=F, fig.align='center', fig.cap="Comparativa de cantidad de estudiantes extranjeros"}
 ggplot(college, aes(Private, Outstate, fill = Private)) + 
   geom_boxplot() + 
   labs(title = "Número de estudiantes extranjeros que ingresan a \ninstituciones públicas o privadas", fill = "Privado") + 
@@ -502,7 +512,7 @@ ggplot(college, aes(Private, Outstate, fill = Private)) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-Y así, de lo anterior se puede apreciar que la cantidad de estudiantes extranjeros que provienen del exterior e ingresan a una universidad privada es significativamente mayor a la cantidad de estudiantes que provienen del exterior y deciden estudiar en una institución pública, dado que, las cajas del gráfico no se traslapan. 
+Y así, de lo anterior se puede apreciar que la cantidad de estudiantes extranjeros que ingresan a una universidad privada es significativamente mayor a la cantidad de estudiantes que provienen del exterior y deciden estudiar en una institución pública, dado que, las cajas del gráfico no se traslapan. 
 
 \subsubsection{(iv)}
 
@@ -516,7 +526,7 @@ pe <- college %>%
   summarize(Frecuencia = n()) %>%
   mutate(Porcentaje = paste(round(100*Frecuencia/sum(Frecuencia),2), "%")) %>%
   ggplot(aes(Elite, Frecuencia, fill = Elite, label = Frecuencia))+
-    geom_col()+
+    geom_col(color = "black")+
     labs(x = "Universidad de élite", y = "Frecuencia",
        title = "Distribución de frecuencias para el tipo de universidad")+
     theme_minimal()+
@@ -529,7 +539,7 @@ pe <- college %>%
   scale_y_continuous(breaks = seq(0, 900, 100), labels = seq(0, 900, 100))
 
 pe1 <- ggplot(college, aes(Elite, Outstate, fill = Elite)) +
-  geom_boxplot() +
+  geom_boxplot(color = "black") +
   labs(y = "Proveniente del exterior", x = "Universidad de Élite",
        title = "Diagrama de cajas y bigotes para la cantidad de estudiantes \nprovenientes del exterior discriminados por\nla clasificación de la universidad", fill = "Universidad de élite") +
   theme_minimal() +
@@ -542,8 +552,10 @@ Para cualquier institución educativa, en particular para una de educación supe
 de vital importancia tener alguna clase de métrica para determinar su calidad como 
 organismo. Dicho esto, se decide tomar como criterio de calidad la cantidad de estudiantes
 que estuvieron en el top 10% en su respectiva promoción de secundaria, clasificando a una
-universidad como de élite si esta posee más del 50% estudiantes que cumplan la característica
+universidad como de élite si esta posee más del 50% de estudiantes que cumplan la característica
 descrita anteriormente.
+
+\newpage
 
 Se presenta una comparativa entre la cantidad de universidades que son clasificadas como
 de élite.
@@ -555,8 +567,10 @@ pe
 ```
 
 
-Cabe notar la enorme diferencia que hay entre la frecuencia universidades de 
+Cabe notar la enorme diferencia que hay entre la frecuencia de universidades de 
 élite y la frecuencia de las universidades que no los son.
+
+\newpage
 
 Veamos más de cerca como es la distribución de estas entre instituciones 
 públicas y privadas.
@@ -566,7 +580,7 @@ públicas y privadas.
 college %>%
   mutate(Private = if_else(Private == "Yes", "Sí", "No")) %>%
   ggplot(aes(x = Elite, fill = Private)) +
-  geom_bar() +
+  geom_bar(color = "black") +
   labs(x = "Universidad de élite", y = "Frecuencia",
        title = "Distribución de frecuencias para el tipo de universidad",
        fill = "Universidad Privada") +
@@ -579,10 +593,12 @@ college %>%
 
 Curiosamente tanto en universidades de élite como en universidades que no lo
 son, la predominancia la poseen las instituciones educativas de carácter
-privado; hecho que llevaría a plantear la hipótesis de si en Estados Unidos
-existen más universidads privadas que publicas.
+privado; hecho que no se corresponde con lo mencionado en el apartado
+del resumen de la base de datos.
 
-Adicional a lo mencinado anteriormente, se considera la comparativa
+\newpage
+
+Adicional a lo mencionado anteriormente, se considera la comparativa
 entre la cantidad de estudiantes que provienen de fuera teniendo en
 cuenta si la universidad es de élite o no.
 
@@ -602,7 +618,7 @@ registros que se tienen de las universidades de élite.
 
 \subsubsection{(v)}
 
-```{r histsv, echo = F}
+```{r histsv, echo = F, fig.align='center', fig.cap="Varios histogramas"}
 p1 <- ggplot(college, aes(Books)) + 
   geom_histogram(color="darkblue", fill="lightblue", binwidth = sturges(college$Books)) + 
       labs(title = "Precio de los libros") +
@@ -635,10 +651,11 @@ p4 <- ggplot(college, aes(Grad.Rate)) +
 ggpubr::ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2)
 ```
 
-Y así, como se mencionó anteriormente en el resultado obtenido con la función summary(), el precio de los libros solicitados en las universidades se concentra en alrededor de los 500 dólares. Asimismo, para el costo de manutención, el precio de la misma ronda en su mayoría los 4300 dólares. 
+Y así, como se mencionó anteriormente en el resultado obtenido con la función `summary()`, el precio de los libros solicitados en las universidades se concentra en alrededor de los 500 dólares. Asimismo, para el costo de manutención, el precio de la misma ronda en su mayoría los 4300 dólares. 
 
 Por último, en términos de porcentajes, se puede apreciar en los dos últimos gráficos que el porcentaje medio de profesores con doctorado dentro de las faculades es de alrededor del 72% y del mismo modo, el porcentaje de estudiantes matriculados que no desertan se concentra al rededor del 65%.
 
+\newpage
 
 \subsubsection{(vi)}
 
@@ -662,7 +679,7 @@ p46 <- ggplot(college, aes(PhD, Expend, color = Elite)) +
 ```
 
 
-LLegados a este punto se presentan algunos resultados en los que se 
+Llegados a este punto se presentan algunos resultados en los que se 
 encuentra información interesante que puede dar paso a futuras investigaciones
 con respecto a aspectos tocados de manera directa o indirecta en dichos
 resultados.
@@ -695,7 +712,7 @@ p44
 
 Del gráfico se puede observar que en promedio las universidades de élite
 poseen una proporción mayor de docentes con PhD, además,
-se tiene una mayor concentración de proporciones para dicho atributo,
+se tiene una mayor concentración de proporciones altas para dicho atributo,
 mientras que en las universidades que no son de élite presentan una
 dispersión mayor.
 
@@ -726,102 +743,9 @@ tan grande es la brecha entre educación superior pública y privada o
 en caso tal de que no se encuentren diferencias, determinar la causa
 del fenómeno que se percibe en el gráfico anterior.
 
+\newpage
+
 \section{Anexos}
-
-\subsection{Ejercicio 2}
-
-Código para el análisis descriptivo y construcción de modelos.
-
-```{r  fig.align='center', fig.cap='Diagrama de cajas de afh vs género'}
-datos <- read.csv("datosage_6.csv", header = T) %>%
-  mutate(gender = as.factor(gender))
-
-ggplot(data = datos) +
-  geom_boxplot(mapping = aes(x = gender, y = afh, color = gender)) +
-  scale_x_discrete(labels = c("Femenino", "Masculino")) + 
-  scale_colour_discrete(labels = c("F", "M")) +
-  labs(colour = "Género", title = "afh vs género") + 
-  xlab("Género") +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
-```
-
-
-```{r fig.align='center', fig.cap='Histograma de afh'}
-ggplot(data = datos, aes(x = afh)) +
-  geom_histogram(binwidth = 5, 
-                 color = "darkgreen", fill = "lightgreen") +
-  ylab("Frecuencia") +
-  labs(title = "Distribución de afh") +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
-```
-
-
-```{r}
-#Partiendo los datos aleatoriamente para la modelacion
-set.seed(3435)
-indexes <- sample(1:dim(datos)[1], 0.8 * dim(datos)[1])
-
-#Particion de los datos
-train_data <- datos[indexes, ] %>%
-  select(afh, gender) %>%
-  mutate(gender = as.numeric(gender))
-
-test_data <- datos[-indexes, ] %>%
-  select(gender) %>%
-  mutate(gender = as.numeric(gender))
-
-test_response <- datos[-indexes, ] %>%
-  select(afh) %>%
-  unlist() %>%
-  as.numeric()
-
-#NOTA: del factor con niveles 0 y 1, siendo numericos se convierten en 1 y 2
-#respectivamente
-```
-
-
-```{r warning=F}
-#Se usa datos en los indices necesarios porque en dicha bd, gender es un factor
-#(lm sí soporta factores)
-param <- lm(afh ~ gender, data = datos[indexes, c("afh", "gender")])
-```
-
-
-```{r warning=F, message=F}
-spans <- seq(from = 0.05, to = 0.95, by = 0.025)
-mse <- c()
-for(i in spans){
-  mod_actual <- loess(afh ~ gender, data = train_data, span = i)
-  mse <- append(mse, Metrics::mse(train_data$afh, fitted(mod_actual)))
-}
-#Nota: Para los spans escogidos se cumple que a partir de 0.575 el mse de
-#entrenamiento siempre es 31.51
-```
-
-
-```{r warning=F, message=F}
-#Aqui si se usa la base train porque gender es numerica para que loess funcione
-nparam <- loess(afh ~ gender, data = train_data)
-```
-
-
-```{r}
-#Modelo lineal
-afh_hat_param <- predict(param, data.frame(gender =  datos[-indexes, 5]))
-mse_param <- Metrics::mse(test_response, afh_hat_param)
-
-#Modelo loess (No parametrico)
-afh_hat_np <- predict(nparam, test_data)
-mse_np <- Metrics::mse(test_response, afh_hat_np)
-
-#Tabla comparativa
-comparacion <- data.frame(MSE = c(mse_param, mse_np) %>% round(3))
-rownames(comparacion) <- c("Lineal", "Loess")
-kable(comparacion, longtable = T, escape = F, booktabs = T)
-```
-
 
 \subsection{Ejercicio 3}
 
@@ -849,4 +773,3 @@ fit.knn <- knn(train = train,
                prob = TRUE)
 fit.knn
 ```
-
