@@ -342,9 +342,28 @@ Por último, de este resumen se puede notar que en promedio, el 72% de los profe
 
 PENDIENTE
 
-```{r pairplot, echo=F, fig.align='center', message=F, eval=FALSE}
-GGally::ggpairs(college[, 1:10])
+```{r pairplot, echo=F, fig.align='center', message=F, fig.cap="Matriz de gráficos"}
+pairplot <- GGally::ggpairs(college[, 1:10],
+                axisLabels = "none",
+                 lower = list(continuous = GGally::wrap(GGally::ggally_points, size = 0.1),
+                              combo = GGally::wrap(GGally::ggally_facethist,
+                              color = "cyan", fill = "black")
+                              ),
+                upper = list(continuous = GGally::wrap("cor", size = 2.5)),
+                columnLabels = as.character(1:10)) +
+  theme_minimal()
+pairplot
 ```
+
+```{r tablaplotfeo, echo = F}
+data.frame(Etiqueta = 1:10, Variable = colnames(college[, 1:10])) %>%
+  t() %>%
+  kable(booktab = T, align = "c", longtable = T, caption = "Descripción de etiquetas para el gráfico anterior", row.names = T) %>%
+  column_spec(1:10, width = "1.25cm") %>%
+  row_spec(1:2, font_size = 7, bold = T) %>%
+  kable_styling(position = "center")
+```
+
 
 \subsubsection{(iii)}
 
