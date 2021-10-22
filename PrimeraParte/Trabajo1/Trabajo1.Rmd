@@ -31,6 +31,9 @@ library(class)
 \thispagestyle{empty}
 \tableofcontents
 \listoffigures
+
+\newpage
+
 \listoftables
 
 \newpage
@@ -41,13 +44,13 @@ library(class)
 \section{Ejercicio 1}
 
 Considere un estimador $\hat{f}$ y un input $\mathbf{X}$ con los que se
-obtiene la predicción $\hat{\mathbf{Y}} = \hat{f}\left(\mathbf{X}\right)$.
+obtiene la predicción $\hat{Y} = \hat{f}\left(\mathbf{X}\right)$.
 Asuma que $\hat{f} \text{ y } \mathbf{X}$ son fijos.
 Demuestre que:
 
 \begin{equation*}
 \begin{split}
-\mathbb{E}\left[\left(\mathbf{Y} - \hat{\mathbf{Y}}\right)^2\right] &= \mathbb{E}\left[\left(f\left(\mathbf{X}\right) + \varepsilon -  \hat{f}\left(\mathbf{X}\right)\right)^2\right] \\
+\mathbb{E}\left[\left(Y - \hat{Y}\right)^2\right] &= \mathbb{E}\left[\left(f\left(\mathbf{X}\right) + \varepsilon -  \hat{f}\left(\mathbf{X}\right)\right)^2\right] \\
 &= \underbrace{\left[f\left(\mathbf{X}\right) - \hat{f}\left(\mathbf{X}\right)\right]^2}_\text{Reducible} + \underbrace{var\left(\varepsilon \right)}_\text{Irreducible}
 \end{split}
 \end{equation*}
@@ -60,16 +63,18 @@ Teniendo en cuenta lo anterior se puede notar que
 
 \begin{equation*}
 \begin{split}
-\mathbb{E}\left[\left(\mathbf{Y} - \hat{\mathbf{Y}}\right)^2\right] &= \mathbb{E}\left[\left(f\left(\mathbf{X}\right) + \varepsilon -  \hat{f}\left(\mathbf{X}\right)\right)^2\right] \\
+\mathbb{E}\left[\left(Y - \hat{Y}\right)^2\right] &= \mathbb{E}\left[\left(f\left(\mathbf{X}\right) + \varepsilon -  \hat{f}\left(\mathbf{X}\right)\right)^2\right] \\
 &=\mathbb{E}\left[\left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right)^2 + 2 \varepsilon \left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right)   + \varepsilon^2 \right] \\
-&=  \left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right)^2 + 2 \left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right) \cancelto{0}{\mathbb{E}}\left[\varepsilon \right] + \mathbb{E}\left[\varepsilon^2 \right] \\
+&=  \left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right)^2 + 2 \left(f\left(\mathbf{X}\right) -\hat{f}\left(\mathbf{X}\right)\right) \cancelto{0}{\mathbb{E}}\left[\varepsilon \right] + \mathbb{E}\left[\left(\varepsilon - \mathbb{E}\left[\varepsilon \right]\right)^2 \right] \\
 &= \left[f\left(\mathbf{X}\right) - \hat{f}\left(\mathbf{X}\right)\right]^2 + var\left(\varepsilon \right)
 \end{split}
 \end{equation*}
 
 El cual es el resultado deseado.
 
-Por tanto el valor esperado de la distacia al cuadrado entre el valor de la variable respuesta y la estimación de esta para un conjunto de inputs y un estimador de la función $f$ fijos corresponde a un error que se puede reducir debido a las múltiples maneras existentes de estimar $f$ y a un error irreducible que corresponde a factores externos que desvían los valores reales de la tendencia principal.
+Por tanto el valor esperado de la distacia al cuadrado entre el valor de la variable respuesta y la estimación de esta para un conjunto de inputs y un estimador de la función $f$ fijos, corresponde a un error que se puede reducir debido a las múltiples maneras existentes de estimar $f$ y a un error irreducible que corresponde a factores externos que desvían los valores reales de la tendencia principal.
+
+\newpage
 
 \section{Ejercicio 2}
 
@@ -77,8 +82,7 @@ Por tanto el valor esperado de la distacia al cuadrado entre el valor de la vari
 
 Antes de realizar cualquier modelo predictivo o análisis inferencial es importante 
 hacer un análisis descriptivo para formular hipótesis.
-Teniendo en cuenta que la variable género es cualitativa, un diagrama de dispersión de
-dispersión entre dicha variable y afh no sería muy adecuado, por lo que se realiza un
+Teniendo en cuenta que la variable género es cualitativa, un diagrama de dispersión entre dicha variable y afh no sería muy adecuado, por lo que se realiza un
 diagrama de cajas el cual logra representar de forma más clara el comportamiento de
 una variable continua en distintas categorías.
 
@@ -340,8 +344,6 @@ Por último, de este resumen se puede notar que en promedio, el 72% de los profe
 
 \subsubsection{(ii)}
 
-PENDIENTE
-
 ```{r pairplot, echo=F, fig.align='center', message=F, fig.cap="Matriz de gráficos"}
 pairplot <- GGally::ggpairs(college[, 1:10],
                 axisLabels = "none",
@@ -356,14 +358,33 @@ pairplot
 ```
 
 ```{r tablaplotfeo, echo = F}
-data.frame(Etiqueta = 1:10, Variable = colnames(college[, 1:10])) %>%
+data.frame(Etiqueta = 1:5, Variable = colnames(college[, 1:5])) %>%
   t() %>%
-  kable(booktab = T, align = "c", longtable = T, caption = "Descripción de etiquetas para el gráfico anterior", row.names = T) %>%
-  column_spec(1:10, width = "1.25cm") %>%
-  row_spec(1:2, font_size = 7, bold = T) %>%
-  kable_styling(position = "center")
+  kable(booktab = T, align = "c", longtable = T,
+        caption = "Descripción de etiquetas para el gráfico anterior",
+        row.names = T) %>%
+  kable_styling(latex_options = "HOLD_position")
+
+data.frame(Etiqueta = 6:10, Variable = colnames(college[, 6:10])) %>%
+  t() %>%
+  kable(booktab = T, align = "c", longtable = T,
+        row.names = T) %>%
+  kable_styling(latex_options = "HOLD_position")
 ```
 
+
+A pesar de que el gráfico no es muy diciente y afecta la calidad de representación
+de los subgráficos por la gran catidad de elementos que contiene, se puede apreciar
+un severo problema y es el de la multicolinealidad, por lo menos en comparaciones
+bivariadas, lo cual no solo es inadecuado puesto que puede comprometer las estimaciones
+de los parámetros de un modelo sino que indica redundancia en las variables, puesto
+que una variable se podría explicar mediante otra, como lo es en el caso de 4 y 7,
+o de 2 y 3, etcétera. 
+
+Adicionalmente, se trae a colación de que las variables 5 y 6 presentan una
+relación que no aparenta ser lineal, sino potencial con una potencia negativa o 
+incluso logarítmica por la curvatura que se puede apreciar en el respectivo 
+diagrama de dispersión.
 
 \subsubsection{(iii)}
 
