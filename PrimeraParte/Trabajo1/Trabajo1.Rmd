@@ -401,6 +401,11 @@ Un límite de decisión de Bayes altamente NO lineal implica que zonas espaciale
 
 Elegir un $K$ relativamente grande implicaría que para la clasificación se tomaría una zona espacial grande y dado lo descrito anteriormente, sería más probable considerar puntos para la clasificación que hacen parte de una clase diferente, lo que aumentaría la probabilidad de una clasificación incorrecta, se esperaría pues que el valor más adecuado para $K$ sea relativamente \textbf{pequeño.}
 
+Adicionalmente, note que si se elige el K más grande posible (K = 5), cualquier nueva
+observación siempre sería clasificada como roja ya que en cualquier conjunto de 5
+observaciones más cercanas habría por lo menos 3 rojas. Esto sucedería inclusive si la
+nueva observación está muy próxima espacialmente a las observaciones verdes.
+
 El desarrollo en R utilizando la función `knn()` de la librería `class` está disponible en los anexos.
 
 \newpage
@@ -413,7 +418,7 @@ Para dar inicio a este desarrollo, en primer lugar se procede a cargar la base d
 
 ```{r data4, echo=F}
 college <- ISLR::College
-source("PlotsLast4.R")
+source("PlotsLast4.R", encoding = "UTF-8")
 ```
 
 
@@ -684,7 +689,7 @@ encuentra información interesante que puede dar paso a futuras investigaciones
 con respecto a aspectos tocados de manera directa o indirecta en dichos
 resultados.
 
-```{r result1, echo=F, fig.align='center', fig.cap="Gráfico de dispersión para los estuidantes matriculados vs los aceptados"}
+```{r result1, echo=F, fig.align='center', fig.cap="Gráfico de dispersión para los estudiantes matriculados vs los aceptados"}
 p41
 ```
 
