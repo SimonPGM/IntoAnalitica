@@ -1,0 +1,116 @@
+---
+header-includes:
+- \usepackage{longtable}
+- \usepackage[utf8]{inputenc}
+- \usepackage[spanish]{babel}\decimalpoint
+- \setlength{\parindent}{1.25cm}
+- \usepackage{amsmath}
+- \usepackage{xcolor}
+- \usepackage{cancel}
+- \usepackage{array}
+- \usepackage{float}
+- \usepackage{multirow}
+output:
+  pdf_document:
+    number_sections: true
+fontsize: 12pt
+papersize: letter
+geometry: margin = 1in
+language: "es"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.pos = "H")
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(class)
+```
+
+\input{titlepage}
+\thispagestyle{empty}
+\tableofcontents
+\listoffigures
+
+\newpage
+
+\listoftables
+
+\newpage
+
+\pagestyle{myheadings}
+\setcounter{page}{3}
+
+<!--- Simon -->
+
+\section{Ejercicio 1} Considere el estadístico leverage:
+
+$$
+h_{ii} = \frac{1}{n} + \frac{\left(x_i - \bar{x}\right)^2}{\sum_{i'=1}^n \left(x_{i'} - \bar{x} \right)^2}
+$$
+
+Demuestre que 
+
+$$
+\frac{1}{n} \leq h_{ii} \leq 1
+$$
+<!--- Juanjo y Santiago -->
+\newpage
+\section{Ejercicio 2} Considere el conjunto de datos anexo (bank.csv) el cual tiene 17
+variables. Asuma que el supervisor es la variable loan.
+
+\subsection{Literal (a)} Cree un conjunto de datos de entrenamiento del 75\% y el
+restante 25\% trátelo como datos de test o prueba.
+
+\subsection{Literal (b)} Con los datos de entrenamiento, implemente Naive Bayes 
+usando loan como el supervisor y las demás como predictores.
+
+\subsection{Literal (c)} Con los datos de entrenamiento, implemente Knn usando loan 
+como el supervisor y las demás como predictores. Ensaye con varios valores de $K$ y
+reporte solo uno de acuerdo a su preferencia. Observe que algunas variables son
+categóricas y se deben crear variables dummies.
+
+\subsection{Literal (d)} Con los datos de entrenamiento, implemente regresión 
+logística usando loan como supervisor y las demás como predictores. 
+
+\subsection{Literal (e)} Con los datos de entrenamiento, implemente LDA usando 
+loan como supervisor y las demás como predictores.
+
+\subsection{Literal (f)} Con los datos de entrenamiento, para cada uno de los 
+métodos anteriores, calcule el training-MSE, la matriz de confusión y grafique 
+la curva ROC.
+
+\subsection{Literal (g)} Use los respectivos ajustes de cada uno de los 
+modelos anteriores y con el conjunto de prueba, calcule el test-MSE, la 
+matriz de confusión y grafique la curva ROC.
+
+\subsection{Literal (h)} ¿Con cuál modelo observó un mejor desempeño y por qué?
+
+
+<!---Simon y Gaviria -->
+\newpage
+\section{Ejercicio 3} Considere el conjunto de datos anexo 
+(costumer loan details.csv) el cual tiene 12 variables incluyendo el ID. 
+Asuma que el supervisor es la variable income.
+
+\subsection{Literal (a)} Cree un conjunto de datos de entrenamiento del 
+75\% y el restante 25\% trátelo como datos de test o prueba
+
+\subsection{Literal (b)} Con los datos de entrenamiento, implemente Knn 
+(con al menos tres valores para $K$) usando income como el supervisor y 
+debts como predictor. Grafique e interprete.
+
+\subsection{Literal (c)} Con los datos de entrenamiento, implemente regresión 
+lineal simple usando income como el supervisor y debts como predictor. Grafique 
+e interprete.
+
+\subsection{Literal (d)} Use los respectivos ajustes de cada uno de los 
+modelos anteriores y con el conjunto de prueba, calcule el test-MSE, ¿Qué observa?
+
+\subsection{Literal (e)} Usando todos los datos y regresión lineal múltiple 
+seleccione un modelo usando forward, backward y stepwise.
+
+\subsection{Literal (f)} Seleccione uno de los modelos del paso anterior y 
+responda con argumentación la pregunta: ¿ajusta bien dicho modelo?
+
+
