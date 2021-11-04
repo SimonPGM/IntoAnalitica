@@ -20,11 +20,12 @@ language: "es"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.pos = "H")
+knitr::opts_chunk$set(echo = F, fig.align = 'c')
 library(tidyverse)
 library(knitr)
 library(kableExtra)
 library(class)
+library(mixlm)
 ```
 
 \input{titlepage}
@@ -93,24 +94,254 @@ matriz de confusión y grafique la curva ROC.
 (costumer loan details.csv) el cual tiene 12 variables incluyendo el ID. 
 Asuma que el supervisor es la variable income.
 
+Para dar inicio, se cargan los datos y se presentan la estructura de la base como se muestra en la siguiente tabla:
+
+```{r cargando datos}
+datos <- read.csv("costumer_loan_details.csv", header = T, sep = ",", dec = ".")
+```
+
+```{r mostrando datos}
+kable(head(datos), caption = "Estructura de los datos", align = 'c', longtable = T)
+```
+
 \subsection{Literal (a)} Cree un conjunto de datos de entrenamiento del 
 75\% y el restante 25\% trátelo como datos de test o prueba
+
+Así, se procede a particionar aleatoriamente la base en datos de entrenamiento y prueba, dejando un 75% de los datos para el entrenamiento de modelos, y el 25% restante para las pruebas de rendimiento correspondientes. 
+
+```{r dividiendo en train y test}
+set.seed(7)
+index <- sample(1:114, 86)
+datos.train <- datos[index,]
+datos.test <- datos[-index,]
+```
+
+Con esto, se obtienen 86 observaciones en los datos de entrenamiento y 28 observaciones en la base de prueba
 
 \subsection{Literal (b)} Con los datos de entrenamiento, implemente Knn 
 (con al menos tres valores para $K$) usando income como el supervisor y 
 debts como predictor. Grafique e interprete.
 
+Dicho lo anterior, se procede a obtener tres modelos usando regresión KNN donde k tomará los valores de 5, 10, 20 y 50 respectivamente. El resultado obtenido se muetra como sigue:
+
+```{r modelando knn reg}
+knn35 <-  FNN::knn.reg(datos.train$income, 
+                      data.frame(income = seq(min(datos.train$income), 
+                                              max(datos.train$income), 
+                                              by = 0.02)), 
+                      datos.train$debts,
+                      5)
+knn310 <- FNN::knn.reg(datos.train$income, 
+                      data.frame(income = seq(min(datos.train$income), 
+                                              max(datos.train$income), 
+                                              by = 0.02)), 
+                      datos.train$debts,
+                      10)
+knn320 <- FNN::knn.reg(datos.train$income, 
+                      data.frame(income = seq(min(datos.train$income), 
+                                              max(datos.train$income), 
+                                              by = 0.02)), 
+                      datos.train$debts,
+                      20)
+knn350 <- FNN::knn.reg(datos.train$income, 
+                      data.frame(income = seq(min(datos.train$income), 
+                                              max(datos.train$income), 
+                                              by = 0.02)), 
+                      datos.train$debts,
+                      50)
+```
+
+```{r graficando knn reg}
+pknn35 <- ggplot(datos, aes(income, debts)) + 
+          geom_point() +
+          geom_path(data = data.frame(income = seq(min(datos.train$income),                                                               max(datos.train$income),
+                                                   by=0.02),                                                                 debts = knn35$pred), 
+                    colour = "orange") + 
+          labs(title = "Regresión KNN para Income vs Debts", caption = "K = 5") +
+          xlab("Income") +
+          ylab("Debts") + 
+          theme_minimal() + 
+          theme(plot.title = element_text(hjust = 0.5))
+
+pknn310 <-ggplot(datos, aes(income, debts)) + 
+          geom_point() +
+          geom_path(data = data.frame(income = seq(min(datos.train$income),                                                               max(datos.train$income),
+                                                   by=0.02),                                                                 debts = knn310$pred), 
+                    colour = "red") + 
+          labs(title = "Regresión KNN para Income vs Debts", caption = "K = 10") +
+          xlab("Income") +
+          ylab("Debts") + 
+          theme_minimal() + 
+          theme(plot.title = element_text(hjust = 0.5))
+
+pknn320 <-ggplot(datos, aes(income, debts)) + 
+          geom_point() +
+          geom_path(data = data.frame(income = seq(min(datos.train$income),                                                               max(datos.train$income),
+                                                   by=0.02),                                                                 debts = knn320$pred), 
+                    colour = "blue") + 
+          labs(title = "Regresión KNN para Income vs Debts", caption = "K = 20") +
+          xlab("Income") +
+          ylab("Debts") + 
+          theme_minimal() + 
+          theme(plot.title = element_text(hjust = 0.5))
+
+pknn350<-ggplot(datos, aes(income, debts)) + 
+          geom_point() +
+          geom_path(data = data.frame(income = seq(min(datos.train$income),                                                               max(datos.train$income),
+                                                   by=0.02),                                                                 debts = knn350$pred), 
+                    colour = "green") + 
+          labs(title = "Regresión KNN para Income vs Debts", caption = "K = 50") +
+          xlab("Income") +
+          ylab("Debts") + 
+          theme_minimal() + 
+          theme(plot.title = element_text(hjust = 0.5))
+  
+ggpubr::ggarrange(pknn35,pknn310,pknn320,pknn350, nrow = 2, ncol = 2)
+```
+
+De acá se puede ver fácilmente que a medida que aumenta el valor de k, la curva del modelo pierde su flexibilidad por lo cual, modelos con valores altos de k pueden llegar a explicar mal la respuesta. Así entonces, para no incurrir en sobreajustes indeseados (y posiblemente llegar a modelos incapaces de generalizar) se puede escoger el modelo de regresión KNN implementado con 20 vecinos más cercanos.
+
 \subsection{Literal (c)} Con los datos de entrenamiento, implemente regresión 
 lineal simple usando income como el supervisor y debts como predictor. Grafique 
 e interprete.
 
+Ahora, es de interés ajustar un modelo de regresión lineal simple donde la respuesta y la covariable en cuestión quedan definidos por debts e income respectivamente, el resultado obtenido se representa como sigue:
+
+El modelo obtenido queda determinado por la siguiente expresión
+
+```{r ajustando regresion}
+mod3 <- stats::lm(debts~income, data = datos.train)
+```
+
+\begin{center}
+$\widehat{debts} = -882.11 +  0.37 * \text{income}$
+\end{center}
+
+Para visualizar el ajuste de este modelo a los datos originales se plantea el siguiente gráfico:
+
+```{r graficando regresion, results ='hide', message=F}
+ggplot(datos.train, aes(income, debts)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = F, colour = "orange") + 
+  labs(title = "Regresión ajustada a los datos Income vs Debts") +
+  xlab("Income") + 
+  ylab("Debts") +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+De este gráfico se puede observar en primera instancia que, la relación entre la deuda y los ingresos es directamente proporcional, por lo cual se puede afirmar que a mayores ingresos, mayor es la deuda. En general puede apreciarse que el ajuste de la recta regresora al conjunto de datos es buena, sin embargo, se debe observar que algunos de los puntos allí presentes logran alejarse bastante de la curva, este tópico es suceptible a un análisis de influencia y balanceo.
+
 \subsection{Literal (d)} Use los respectivos ajustes de cada uno de los 
 modelos anteriores y con el conjunto de prueba, calcule el test-MSE, ¿Qué observa?
+
+Recuérdese que el MSE es una medida de desempeño para modelos de diferentes tipos, y en este caso se desean comparar los modelos anteriormente construídos utilizando esta métrica, siendo el mejor modelo aquel que tenga el menor MSE. Esta medida de desempeño tiene la siguiente especificación:
+
+\begin{center}
+$ECM = \frac{1}{n} \sum_{i=1}^{n}(\hat{y}_{i}-y_{i})^2$
+\end{center}
+
+Así entonces, evaluando todos los modelos en el conjunto de prueba se obtienen los siguientes resultados:
+
+```{r mostrando desempeño}
+knntest5 <- as.numeric(FNN::knn.reg(datos.train$income, 
+                         data.frame(income= datos.test$income), 
+                         datos.train$debts,
+                         5)$pred)
+knntest10 <- as.numeric(FNN::knn.reg(datos.train$income, 
+                         data.frame(income= datos.test$income), 
+                         datos.train$debts,
+                         10)$pred)
+knntest20 <- as.numeric(FNN::knn.reg(datos.train$income, 
+                         data.frame(income= datos.test$income), 
+                         datos.train$debts,
+                         20)$pred)
+knntest50 <- as.numeric(FNN::knn.reg(datos.train$income, 
+                         data.frame(income= datos.test$income), 
+                         datos.train$debts,
+                         50)$pred)
+regtest <- predict(mod3, data.frame(income= datos.test$income))
+
+mse <- function(real, predicted){
+  return(mean((real-predicted)^2))}
+
+mse.table <- data.frame("Modelo" = "MSE",
+                        "Regresión" = mse(datos.test$debts, regtest),
+                        "$K=5$" = mse(datos.test$debts, knntest5),
+                        "$k=10$" = mse(datos.test$debts, knntest10),
+                        "$K=20$" = mse(datos.test$debts, knntest20),
+                        "$K=50$" = mse(datos.test$debts, knntest50))
+
+kable(mse.table, caption = "Resultados de Desempeño", align = 'c', longtable = T)
+```
+
+Así, se puede apreciar que el menor MSE lo reporta el modelo de regresión lineal simple. El mejor modelo de regresión KNN fué aquel que se escogió con 10 vecinos más cercanos, dado que entre este tipo de modelos fué el que menor MSE presentó. Todo este resultado se obtuvo a partir de los datos de test.
 
 \subsection{Literal (e)} Usando todos los datos y regresión lineal múltiple 
 seleccione un modelo usando forward, backward y stepwise.
 
+Ahora, se desea obtener un modelo de regresión utilizando métodos de selección como backward, forward y stepwise.
+
+Así entonces, para comenzar a realizar backward, se ajusta inicialmente un modelo saturado y se comienzan a eliminar regresores con una significancia menor a la usual en el modelo, con lo cual se obtiene finalmente lo siguiente:
+
+```{r haciendo backward, results='hide'}
+mod3e <- stats::lm(debts~state+gender+age+race+marital_status+occupation+credit_score+income+loan_type+loan_decision_type, data = datos)
+mod3eback <- backward(mod3e, 0.05)
+dfback <- data.frame("Covariable"= names(mod3eback$coefficients), 
+                     "Estimación" = as.numeric(mod3eback$coefficients))
+```
+
+```{r imprimiendo resultados 1}
+kable(dfback, caption = "Variables para el modelo final", align = 'c', longtable = T)
+```
+
+Así, se puede observar que después de hacer la selección hacia atrás con un nivel de significancia usual se obtiene que las covariables eliminadas en este caso son: occupation, state, gender, race y marital_status.
+
+Por otro lado, para realizar forward o selección hacia adelante se parte un modelo sin covariables, es decir, solo teniendo en cuenta el intercepto. Posteriormete se debe especificar un scope de variables para definir hasta donde hacer la selección hacia adelante, lo obtenido se muestra como sigue:
+
+```{r haciendo forward, results='hide'}
+mod3eforw <- forward(mod3e, 0.05)
+dfforw <- data.frame("Covariable"= names(mod3eforw$coefficients), 
+                     "Estimación" = as.numeric(mod3eforw$coefficients))
+```
+
+```{r imprimiendo resultados 2}
+kable(dfforw, caption = "Variables para el modelo final", align = 'c', longtable = T)
+```
+
+Así, gracias al método de selección hacia adelante se llega a exactamente el mismo modelo obtenido en el desarrollo anterior, todo esto agregando variables que supongan un nivel de significancia usual.
+
+Por último, se intentará llegar a un último modelo, pero esta vez usando el método stepwise, ingresando y eliminando variables a un nivel de significancia de $\alpha = 0.05$, con lo cual se obtiene el siguiente resultado:
+
+```{r haciendo stepwise, results = 'hide'}
+mod3estep <- stepWise(mod3e, alpha.enter = 0.05, alpha.remove = 0.05)
+
+dfforw <- data.frame("Covariable"= names(mod3estep$coefficients), 
+                     "Estimación" = as.numeric(mod3estep$coefficients))
+```
+
+```{r imprimendo resultados 3}
+kable(dfforw, caption = "Variables para el modelo final", align = 'c', longtable = T)
+```
+
+Y así, de nuevo se obtiene exactamente el mismo modelo que en los procedimientos anteriores. 
+
 \subsection{Literal (f)} Seleccione uno de los modelos del paso anterior y 
 responda con argumentación la pregunta: ¿ajusta bien dicho modelo?
+
+Dado que se obtiene exactamente el mismo modelo usando los diferentes procedimientos mencionados para selección de variables, se selecciona este y para hacer alguna comparación, se procede a presentar el AIC y el $R^2_{adj}$ del modelo saturado y del modelo en cuestión:
+
+```{r desempeño de los modelos anteriores}
+kable(data.frame(c("Saturado", "Depurado"),
+                 c(AIC(mod3e),AIC(mod3eback)),
+                 round(c(summary(mod3e)$r.squared, summary(mod3eback)$r.squared),3)),
+      col.names = c("Modelo", "AIC", "${R^2}_{adj}$"),
+      escape = F,
+      caption = "Comparación de modelos",
+      align = 'c',
+      longtable = T)
+```
+
+Así, se puede decidir por cualquier modelo de estos dos teniendo en cuenta alguna de las métricas presentadas anteriormente. Sin embargo, en este caso por parsimonia y teniendo en cuenta el criterio de información de Akaike, se escoje el modelo obtenido realizando el debido procedimeinto de selección de variables.
 
 
