@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 #pdf files
 *.pdf
+
+#log files
+*.log
