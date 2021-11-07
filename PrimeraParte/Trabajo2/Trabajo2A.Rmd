@@ -1,0 +1,400 @@
+---
+header-includes:
+- \usepackage{longtable}
+- \usepackage[utf8]{inputenc}
+- \usepackage[spanish]{babel}\decimalpoint
+- \setlength{\parindent}{1.25cm}
+- \usepackage{amsmath}
+- \usepackage{xcolor}
+- \usepackage{cancel}
+- \usepackage{array}
+- \usepackage{float}
+- \usepackage{multirow}
+output:
+  pdf_document:
+    number_sections: true
+fontsize: 12pt
+papersize: letter
+geometry: margin = 1in
+language: "es"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, fig.align = 'c', message = F)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(class)
+library(mixlm)
+library(e1071)
+library(caret)
+library(MASS)
+library(pROC)
+```
+
+\input{titlepage}
+\thispagestyle{empty}
+\tableofcontents
+\listoffigures
+
+\newpage
+
+\listoftables
+
+\newpage
+
+\pagestyle{myheadings}
+\setcounter{page}{3}
+
+\newpage
+\section{Ejercicio 2} Considere el conjunto de datos anexo (bank.csv) el cual tiene 17
+variables. Asuma que el supervisor es la variable loan.
+
+\subsection{Literal (a)} Cree un conjunto de datos de entrenamiento del 75\% y el
+restante 25\% trátelo como datos de test o prueba.
+
+Para la selección de cada uno de los conjuntos de datos (entrenamiento y prueba) 
+se fijó la semilla 3435, luego se usó la función `sample()` de R para seleccionar
+aleatoriamente $\lfloor11162 \times 0.75\rfloor = 8371$ observaciones para el 
+conjunto de entrenamiento y el restante $2791$ se dejaron como datos de prueba.
+
+```{r train_test2}
+bank <- read.csv("bank.csv") %>%
+  mutate(day = as.factor(day))
+
+set.seed(3435)
+n_ej2 <- dim(bank)[1]
+indexes <- sample(1:n_ej2, floor(n_ej2 * 0.75))
+bank_train <- bank[indexes, ]
+bank_test <- bank[-indexes, ] %>%
+  dplyr::select(-loan)
+bank_test_response <- bank[-indexes, ] %>%
+  dplyr::select(loan) %>%
+  unlist() %>%
+  as.factor()
+```
+
+\subsection{Literal (b)} Con los datos de entrenamiento, implemente Naive Bayes 
+usando loan como el supervisor y las demás como predictores.
+
+```{r naive_bayes}
+mod_naive_bayes <- naiveBayes(loan ~ ., data = bank_train)
+```
+
+<!--- Housing, Default, Age -->
+
+Antes de ajustar el modelo, la variable día del mes se convirtió en factor ya que por la naturaleza del problema no tiene sentido tratarla como variable numérica; luego de hacer este pequeño ajuste se construyó el modelo Naive Bayes usando la variable préstamo en función de todas las demás variables, para el ajuste del modelo se usó la función `naiveBayes()` de la librería `e1071`. A continuación se presenta unas cuantas tablas del output de dicha función.
+
+```{r tablas_naive_bayes}
+#housing
+aux_housing <- mod_naive_bayes$tables$housing
+rownames(aux_housing) <- c("No", "Sí")
+kable(aux_housing %>% round(4), 
+      booktabs = T, 
+      caption = "Alojamiento", 
+      col.names = c("No", "Sí"),
+      longtable = T) %>%
+  add_header_above(c(" " = 1, "Alojamiento" = 2))
+
+#default
+aux_default <- mod_naive_bayes$tables$default
+rownames(aux_default) <- c("No", "Sí")
+kable(aux_default %>% round(4), 
+      booktabs = T, 
+      caption = "Entrar en deuda", 
+      col.names = c("No", "Sí"),
+      longtable = T) %>%
+  add_header_above(c(" " = 1, "Deuda" = 2))
+
+#age
+aux_age <- mod_naive_bayes$tables$age
+rownames(aux_age) <- c("No", "Sí")
+kable(aux_age %>% round(4), 
+      booktabs = T, 
+      caption = "Edad", 
+      col.names = c("Media", "Desviación estandar"),
+      longtable = T) %>%
+  add_header_above(c(" " = 1, "Edad" = 2))
+
+rm(aux_housing, aux_age, aux_default)
+```
+
+Se hace la aclaración de que las filas de cada tabla representan los valores de 
+la variable respuesta, en este caso como se está en un problema de clasificación
+binario sus posibles valores son "Sí" y "No". Para los inputs numéricos retorna 
+una tabla donde la primera columna es la media de dicha variable y la segunda es
+su desviación estandar; en el caso de los inputs categóricos se retorna una tabla
+con las probabilidades condicionales dada una clase de la variable respuesta.
+
+\subsection{Literal (c)} Con los datos de entrenamiento, implemente Knn usando loan 
+como el supervisor y las demás como predictores. Ensaye con varios valores de $K$ y
+reporte solo uno de acuerdo a su preferencia. Observe que algunas variables son
+categóricas y se deben crear variables dummies.
+
+Para la construcción del modelo KNN se usaron las funciones `trainControl()` y
+`train(..., method = "knn")` de la librería `caret`. La función `trainControl()` 
+se encarga de controlar los parámetros de entrenamiento que usará posteriormente
+la función `train()` la cual es la protagonista en el proceso de ajuste del modelo
+KNN. `train()` puede recibir un objeto de la clase formula para ajustar el modelo 
+y ella se encarga internamente de realizar el proceso de creación de variables 
+dummies para que el algoritmo funcione correctamente; dicha función puede ajustar
+modelos con diversos métodos, en particular KNN el cual fue especificado en el
+argumento method para este propósito.
+
+Dada la complejidad de interpretación y graficación para este problema por la 
+cantidad de variables que se tiene, se presenta a continuación una tabla con el
+resultado del Accuracy para distintos valores de K.
+
+```{r mod_knn_ej2}
+ctrl <- trainControl(method = "LGOCV", p = 0.9, number = 15)
+#ajuste del modelo
+# mod_knn <- train(loan ~ .,
+#                  data       = bank_train,
+#                  method     = "knn",
+#                  preProcess = c("center","scale"),
+#                  trControl  = ctrl,
+#                  metric     = "Accuracy")
+# saveRDS(mod_knn, file = "mod_knn.rds")
+mod_knn <- readRDS("mod_knn.rds")
+kable(mod_knn$results[, c("k", "Accuracy", "AccuracySD")] %>% round(4), 
+      longtable = T,
+      booktabs = T,
+      col.names = c("K", "Exactitud", "Exactitud - SD"))
+```
+
+\subsection{Literal (d)} Con los datos de entrenamiento, implemente regresión 
+logística usando loan como supervisor y las demás como predictores. 
+
+El ajuste del modelo logístico se realizó usando la función `glm()` de la librería
+básica de R `stats`, la cual sirve para ajustar modelos lineales generalizados, se
+especificó la familia como "binomial" para este propósito. La función logit fue
+usada como enlace para garantizar que las imágenes estén mapeadas a valores en el
+intervalo $(0, 1)$
+
+```{r mod_logistico}
+bank_train_logit <- bank_train %>% 
+  mutate(loan = if_else(loan == "yes", 1, 0))
+mod_logit <- stats::glm(loan ~ ., data = bank_train_logit, family = "binomial")
+```
+
+\subsection{Literal (e)} Con los datos de entrenamiento, implemente LDA usando 
+loan como supervisor y las demás como predictores.
+
+<!--- Agregar algo después -->
+
+```{r lda}
+mod_lda <- lda(loan ~ ., data = bank_train)
+```
+
+\subsection{Literal (f)} Con los datos de entrenamiento, para cada uno de los 
+métodos anteriores, calcule el training-MSE, la matriz de confusión y grafique 
+la curva ROC.
+
+```{r metricas_f, message=F}
+validacion <- function(observados, ajustados, caption = " "){
+  accuracy <- Metrics::accuracy(observados, ajustados)
+  matriz_confusion <- table(Observados = observados, Ajustados = ajustados)
+  rownames(matriz_confusion) <- c("No", "Sí")
+  matriz_confusion <- kable(matriz_confusion,
+                            longtable = T, booktabs = T, caption = caption,
+                            col.names = c("No", "Sí"))
+  overall <- list(Accuracy = accuracy, Confusion_matrix = matriz_confusion)
+  return(overall)
+}
+
+label_response <- which(names(bank_train) == "loan")
+# Naive Bayes
+pred_nb_train <- predict(mod_naive_bayes, 
+                            newdata = bank_train[, -label_response])
+# KNN
+pred_knn_train <- predict(mod_knn, bank_train[, -label_response])
+
+#Logistica
+pred_logit_train <- ifelse(predict(mod_logit, bank_train[, -label_response],
+                            type = "response") > 0.5, "yes", "no")
+#LDA
+pred_lda_train <- predict(mod_lda, bank_train[, -label_response])
+
+#Exactitud
+exactitud <- cbind(validacion(bank_train[, label_response], pred_nb_train, 
+           caption = "Naive Bayes")$Accuracy,
+           validacion(bank_train[, label_response], pred_knn_train, 
+           caption = "Naive Bayes")$Accuracy,
+           validacion(bank_train[, label_response], pred_logit_train, 
+           caption = "Naive Bayes")$Accuracy,
+           validacion(bank_train[, label_response], pred_lda_train$class, 
+           caption = "Naive Bayes")$Accuracy) %>%
+  round(4) %>%
+  as.data.frame() 
+
+colnames(exactitud) <- c("Naive Bayes", "KNN", "Logística", "LDA")
+rownames(exactitud) <- c("Train-MSE")
+
+kable(exactitud, longtable = T, booktabs = T, 
+      caption = "MSE en los datos de entrenamiento")
+
+#Matrices de confusión
+validacion(bank_train[, label_response], pred_nb_train, 
+           caption = "Naive Bayes")$Confusion_matrix
+validacion(bank_train[, label_response], pred_knn_train, 
+           caption = "KNN")$Confusion_matrix
+validacion(bank_train[, label_response], pred_logit_train, 
+           caption = "Regresión logística")$Confusion_matrix
+validacion(bank_train[, label_response], pred_lda_train$class,
+           caption = "LDA")$Confusion_matrix
+```
+
+
+```{r curvas_roc_train}
+numeric_train_label <- ifelse(bank_train[, label_response] == "yes", 1, 0)
+numeric_train_nb <- ifelse(pred_nb_train == "yes", 1, 0)
+
+#Curvas ROC
+#Naive - Bayes
+roc_nb_train <- roc(numeric_train_label, numeric_train_nb)
+p1_train <- ggroc(roc_nb_train) +
+  geom_segment(aes(x = 1, xend = 0,
+                   y = 0, yend = 1), color = "tomato", linetype = "dashed") +
+  labs(title = "Curva ROC Naive - Bayes", x = "Especificidad",
+       y = "Sensibilidad") + 
+  theme_minimal()
+
+#KNN
+numeric_train_knn <- ifelse(pred_knn_train == "yes", 1, 0)
+roc_knn_train <- roc(numeric_train_label, numeric_train_knn)
+p2_train <- ggroc(roc_knn_train) +
+  geom_segment(aes(x = 1, xend = 0,
+                   y = 0, yend = 1), color = "darkblue", linetype = "dashed") +
+  labs(title = "Curva ROC KNN", x = "Especificidad",
+       y = "Sensibilidad") + 
+  theme_minimal()
+
+#Logistica
+numeric_logit_train <- ifelse(pred_logit_train == "yes", 1, 0)
+
+roc_logit_train <- roc(numeric_train_label, numeric_logit_train)
+p3_train <- ggroc(roc_logit_train) +
+  geom_segment(aes(x = 1, xend = 0,
+                   y = 0, yend = 1), color = "purple", linetype = "dashed") +
+  labs(title = "Curva ROC regresión logística", x = "Especificidad",
+       y = "Sensibilidad") + 
+  theme_minimal()
+
+#LDA
+numeric_lda_train <- ifelse(pred_lda_train$class == "yes", 1, 0)
+
+roc_lda_train <- roc(numeric_train_label, numeric_lda_train)
+p4_train <- ggroc(roc_lda_train) +
+  geom_segment(aes(x = 1, xend = 0,
+                   y = 0, yend = 1), color = "darkgreen", linetype = "dashed") +
+  labs(title = "Curva ROC LDA", x = "Especificidad",
+       y = "Sensibilidad") + 
+  theme_minimal()
+
+ggpubr::ggarrange(p1_train, p2_train, p3_train, p4_train)
+
+rm(numeric_train_nb, numeric_train_knn, numeric_logit_train, numeric_lda_train)
+
+```
+
+\subsection{Literal (g)}
+
+```{r metricas_g, message=F}
+# Naive Bayes
+pred_nb_test <- predict(mod_naive_bayes, 
+                            newdata = bank_test)
+# KNN
+pred_knn_test <- predict(mod_knn, bank_test)
+
+#Logistica
+pred_logit_test <- ifelse(predict(mod_logit, bank_test,
+                            type = "response") > 0.5, "yes", "no")
+#LDA
+pred_lda_test <- predict(mod_lda, bank_test)
+
+#Exactitud
+exactitud_test <- cbind(validacion(bank_test_response, pred_nb_test, 
+           caption = "Naive Bayes")$Accuracy,
+           validacion(bank_test_response, pred_knn_test, 
+           caption = "Naive Bayes")$Accuracy,
+           validacion(bank_test_response, pred_logit_test, 
+           caption = "Naive Bayes")$Accuracy,
+           validacion(bank_test_response, pred_lda_test$class, 
+           caption = "Naive Bayes")$Accuracy) %>%
+  round(4) %>%
+  as.data.frame() 
+
+colnames(exactitud_test) <- c("Naive Bayes", "KNN", "Logística", "LDA")
+rownames(exactitud_test) <- c("Test-MSE")
+
+kable(exactitud_test, longtable = T, booktabs = T, 
+      caption = "MSE en los datos de prueba")
+
+#Matrices de confusión
+validacion(bank_test_response, pred_nb_test, 
+           caption = "Naive Bayes")$Confusion_matrix
+validacion(bank_test_response, pred_knn_test, 
+           caption = "KNN")$Confusion_matrix
+validacion(bank_test_response, pred_logit_test, 
+           caption = "Regresión logística")$Confusion_matrix
+validacion(bank_test_response, pred_lda_test$class,
+           caption = "LDA")$Confusion_matrix
+```
+
+
+
+```{r curvas_roc_test}
+numeric_test_label <- ifelse(bank_test_response == "yes", 1, 0)
+numeric_test_nb <- ifelse(pred_nb_test == "yes", 1, 0)
+
+#Curvas ROC
+#Naive - Bayes
+roc_nb_test <- roc(numeric_test_label, numeric_test_nb)
+p1_test <- ggroc(roc_nb_test) +
+  geom_segment(aes(x = 1, xend = 0,
+                   y = 0, yend = 1), color = "tomato", linetype = "dashed") +
+  labs(title = "Curva ROC Naive - Bayes", x = "Especificidad",
+       y = "Sensibilidad") + 
+  theme_minimal()
+
+#KNN
+numeric_test_knn <- ifelse(pred_knn_test == "yes", 1, 0)
+roc_knn_test <- roc(numeric_test_label, numeric_test_knn)
+p2_test <- ggroc(roc_knn_test) +
+  geom_segment(aes(x = 1, xend = 0,
+                   y = 0, yend = 1), color = "darkblue", linetype = "dashed") +
+  labs(title = "Curva ROC KNN", x = "Especificidad",
+       y = "Sensibilidad") + 
+  theme_minimal()
+
+#Logistica
+numeric_logit_test <- ifelse(pred_logit_test == "yes", 1, 0)
+
+roc_logit_test <- roc(numeric_test_label, numeric_logit_test)
+p3_test <- ggroc(roc_logit_test) +
+  geom_segment(aes(x = 1, xend = 0,
+                   y = 0, yend = 1), color = "purple", linetype = "dashed") +
+  labs(title = "Curva ROC regresión logística", x = "Especificidad",
+       y = "Sensibilidad") + 
+  theme_minimal()
+
+#LDA
+numeric_lda_test <- ifelse(pred_lda_test$class == "yes", 1, 0)
+
+roc_lda_test <- roc(numeric_test_label, numeric_lda_test)
+p4_test <- ggroc(roc_lda_test) +
+  geom_segment(aes(x = 1, xend = 0,
+                   y = 0, yend = 1), color = "darkgreen", linetype = "dashed") +
+  labs(title = "Curva ROC LDA", x = "Especificidad",
+       y = "Sensibilidad") + 
+  theme_minimal()
+
+ggpubr::ggarrange(p1_test, p2_test, p3_test, p4_test)
+
+rm(numeric_test_nb, numeric_test_knn, numeric_logit_test, numeric_lda_test)
+
+```
+
+
+
+
