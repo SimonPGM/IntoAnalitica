@@ -139,11 +139,17 @@ KNN. `train()` puede recibir un objeto de la clase formula para ajustar el model
 y ella se encarga internamente de realizar el proceso de creación de variables 
 dummies para que el algoritmo funcione correctamente; dicha función puede ajustar
 modelos con diversos métodos, en particular KNN el cual fue especificado en el
-argumento method para este propósito.
+argumento method para este propósito. La función `train()` realiza un remuestreo
+de la base de datos un número preespecificado de veces  $m$ ingresada para 
+calcular el $K$ óptimo, por lo tanto el MSE es calculado $m$ veces, esto permite
+obtener tanto la media como la desviación estandar del MSE para distintos 
+valores de $K$ y dicho valor no necesariamente va a concordar con el MSE del 
+train que es calculado sobre la base de datos de entrenamiento completo, sin 
+embargo los valores deben ser muy similares. 
 
 Dada la complejidad de interpretación y graficación para este problema por la 
 cantidad de variables que se tiene, se presenta a continuación una tabla con el
-resultado del Accuracy para distintos valores de K.
+resultado del Accuracy para distintos valores de K. 
 
 ```{r mod_knn_ej2}
 ctrl <- trainControl(method = "LGOCV", p = 0.9, number = 15)
@@ -159,17 +165,12 @@ mod_knn <- readRDS("mod_knn.rds")
 kable(mod_knn$results[, c("k", "Accuracy", "AccuracySD")] %>% round(4), 
       longtable = T,
       booktabs = T,
-      col.names = c("K", "Exactitud", "Exactitud - SD"))
+      col.names = c("K", "Exactitud", "Exactitud - SD"),
+      caption = "Métricas para distintos valores de K")
 ```
 
 \subsection{Literal (d)} Con los datos de entrenamiento, implemente regresión 
 logística usando loan como supervisor y las demás como predictores. 
-
-El ajuste del modelo logístico se realizó usando la función `glm()` de la librería
-básica de R `stats`, la cual sirve para ajustar modelos lineales generalizados, se
-especificó la familia como "binomial" para este propósito. La función logit fue
-usada como enlace para garantizar que las imágenes estén mapeadas a valores en el
-intervalo $(0, 1)$
 
 ```{r mod_logistico}
 bank_train_logit <- bank_train %>% 
@@ -177,10 +178,44 @@ bank_train_logit <- bank_train %>%
 mod_logit <- stats::glm(loan ~ ., data = bank_train_logit, family = "binomial")
 ```
 
+El ajuste del modelo logístico se realizó usando la función `glm()` de la librería
+básica de R `stats`, la cual sirve para ajustar modelos lineales generalizados, se
+especificó la familia como "binomial" para este propósito. La función logit fue
+usada como enlace para garantizar que las imágenes estén mapeadas a valores en el
+intervalo $(0, 1)$, si dicho valor es mayor a $0.5$ se clasifica como "Sí", de 
+lo contrario se clasifica como "No".
+
+```{r marital}
+resumen <- summary(mod_logit)
+marital_table <-  resumen$coefficients[c("marital1", "marital2"), ] %>%
+  round(4)
+rownames(marital_table) <- c("Casado", "Soltero")
+kable(marital_table, longtable = T, booktabs = T,
+      col.names = c("Estimación", "Error estándar", "$Z_0$", "Valor-p"),
+      caption = "Coeficientes del modelo LR para la variable estado civil",
+      escape = F)
+```
+
+La variable estado civil es categórica con 3 niveles los cuales son divorciado, casado y soltero; se utiliza el nivel divorciado como referencia. A partir de los coeficientes estimados en el modelo de regresión logística se pueden obtener las siguientes estimaciones para algunas razones de odds: 
+
+\begin{itemize}
+\item La razón de odds que contrasta aquellos que están casados en comparación con
+aquellos que están divorciados se obtiene como 
+$\exp{(0.1888)} = `r exp(0.1888) %>% round(4)`$, es decir que los casados 
+presentan $100\% \times (\exp{(0.1888)} - 1) = `r 100*(exp(0.1888) - 1) %>% round(4)`\%$ más de chances de obtener un préstamo respecto a los divorciados.
+\item La razón de odds que contrasta aquellos que están solteros en comparación 
+con aquellos que están divorciados se obtiene como 
+$\exp{(0.1146)} = `r exp(0.1146) %>% round(4)`$, es decir que los solteros 
+presentan 
+$100\% \times (\exp{(0.1146)} - 1) = `r 100*(exp(0.1146) - 1) %>% round(4)`\%$ 
+más de chances de obtener un préstamo respecto a los divorciados. 
+\end{itemize}
+
+
 \subsection{Literal (e)} Con los datos de entrenamiento, implemente LDA usando 
 loan como supervisor y las demás como predictores.
 
-<!--- Agregar algo después -->
+Para ajustar el modelo LDA se usó la función `lda()` de la librería `MASS` 
 
 ```{r lda}
 mod_lda <- lda(loan ~ ., data = bank_train)
@@ -189,6 +224,8 @@ mod_lda <- lda(loan ~ ., data = bank_train)
 \subsection{Literal (f)} Con los datos de entrenamiento, para cada uno de los 
 métodos anteriores, calcule el training-MSE, la matriz de confusión y grafique 
 la curva ROC.
+
+\subsubsection{Errores cuadráticos medios de entrenamiento}
 
 ```{r metricas_f, message=F}
 validacion <- function(observados, ajustados, caption = " "){
@@ -232,7 +269,11 @@ rownames(exactitud) <- c("Train-MSE")
 
 kable(exactitud, longtable = T, booktabs = T, 
       caption = "MSE en los datos de entrenamiento")
+```
 
+\subsubsection{Matrices de confusión de entrenamiento}
+
+```{r matrices_confusion_f, message=F}
 #Matrices de confusión
 validacion(bank_train[, label_response], pred_nb_train, 
            caption = "Naive Bayes")$Confusion_matrix
@@ -244,8 +285,9 @@ validacion(bank_train[, label_response], pred_lda_train$class,
            caption = "LDA")$Confusion_matrix
 ```
 
+\subsubsection{Curvas ROC de entrenamiento}
 
-```{r curvas_roc_train}
+```{r curvas_roc_train, fig.cap="Curvas ROC", fig.pos = "H"}
 numeric_train_label <- ifelse(bank_train[, label_response] == "yes", 1, 0)
 numeric_train_nb <- ifelse(pred_nb_train == "yes", 1, 0)
 
@@ -255,7 +297,7 @@ roc_nb_train <- roc(numeric_train_label, numeric_train_nb)
 p1_train <- ggroc(roc_nb_train) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "tomato", linetype = "dashed") +
-  labs(title = "Curva ROC Naive - Bayes", x = "Especificidad",
+  labs(title = "Naive - Bayes", x = "Especificidad",
        y = "Sensibilidad") + 
   theme_minimal()
 
@@ -265,7 +307,7 @@ roc_knn_train <- roc(numeric_train_label, numeric_train_knn)
 p2_train <- ggroc(roc_knn_train) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "darkblue", linetype = "dashed") +
-  labs(title = "Curva ROC KNN", x = "Especificidad",
+  labs(title = "KNN", x = "Especificidad",
        y = "Sensibilidad") + 
   theme_minimal()
 
@@ -276,7 +318,7 @@ roc_logit_train <- roc(numeric_train_label, numeric_logit_train)
 p3_train <- ggroc(roc_logit_train) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "purple", linetype = "dashed") +
-  labs(title = "Curva ROC regresión logística", x = "Especificidad",
+  labs(title = "Regresión logística", x = "Especificidad",
        y = "Sensibilidad") + 
   theme_minimal()
 
@@ -287,7 +329,7 @@ roc_lda_train <- roc(numeric_train_label, numeric_lda_train)
 p4_train <- ggroc(roc_lda_train) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "darkgreen", linetype = "dashed") +
-  labs(title = "Curva ROC LDA", x = "Especificidad",
+  labs(title = "LDA", x = "Especificidad",
        y = "Sensibilidad") + 
   theme_minimal()
 
@@ -298,6 +340,8 @@ rm(numeric_train_nb, numeric_train_knn, numeric_logit_train, numeric_lda_train)
 ```
 
 \subsection{Literal (g)}
+
+\subsubsection{Errores cuadráticos medios de prueba}
 
 ```{r metricas_g, message=F}
 # Naive Bayes
@@ -329,7 +373,11 @@ rownames(exactitud_test) <- c("Test-MSE")
 
 kable(exactitud_test, longtable = T, booktabs = T, 
       caption = "MSE en los datos de prueba")
+```
 
+\subsubsection{Matrices de confusión de prueba}
+
+```{r matrices_confusion_g}
 #Matrices de confusión
 validacion(bank_test_response, pred_nb_test, 
            caption = "Naive Bayes")$Confusion_matrix
@@ -341,9 +389,9 @@ validacion(bank_test_response, pred_lda_test$class,
            caption = "LDA")$Confusion_matrix
 ```
 
+\subsubsection{Curvas ROC de prueba}
 
-
-```{r curvas_roc_test}
+```{r curvas_roc_test, fig.cap="Curva ROC", fig.pos="H"}
 numeric_test_label <- ifelse(bank_test_response == "yes", 1, 0)
 numeric_test_nb <- ifelse(pred_nb_test == "yes", 1, 0)
 
@@ -353,7 +401,7 @@ roc_nb_test <- roc(numeric_test_label, numeric_test_nb)
 p1_test <- ggroc(roc_nb_test) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "tomato", linetype = "dashed") +
-  labs(title = "Curva ROC Naive - Bayes", x = "Especificidad",
+  labs(title = "Naive - Bayes", x = "Especificidad",
        y = "Sensibilidad") + 
   theme_minimal()
 
@@ -363,7 +411,7 @@ roc_knn_test <- roc(numeric_test_label, numeric_test_knn)
 p2_test <- ggroc(roc_knn_test) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "darkblue", linetype = "dashed") +
-  labs(title = "Curva ROC KNN", x = "Especificidad",
+  labs(title = "KNN", x = "Especificidad",
        y = "Sensibilidad") + 
   theme_minimal()
 
@@ -374,7 +422,7 @@ roc_logit_test <- roc(numeric_test_label, numeric_logit_test)
 p3_test <- ggroc(roc_logit_test) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "purple", linetype = "dashed") +
-  labs(title = "Curva ROC regresión logística", x = "Especificidad",
+  labs(title = "Regresión logística", x = "Especificidad",
        y = "Sensibilidad") + 
   theme_minimal()
 
@@ -385,7 +433,7 @@ roc_lda_test <- roc(numeric_test_label, numeric_lda_test)
 p4_test <- ggroc(roc_lda_test) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "darkgreen", linetype = "dashed") +
-  labs(title = "Curva ROC LDA", x = "Especificidad",
+  labs(title = "LDA", x = "Especificidad",
        y = "Sensibilidad") + 
   theme_minimal()
 
@@ -395,6 +443,11 @@ rm(numeric_test_nb, numeric_test_knn, numeric_logit_test, numeric_lda_test)
 
 ```
 
+
+
+```{r borrando_todo}
+rm(list = ls())
+```
 
 
 
