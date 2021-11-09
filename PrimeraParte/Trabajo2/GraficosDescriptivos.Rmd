@@ -1,0 +1,40 @@
+---
+title: "GraficosDescriptivos"
+author: "..."
+date: "8/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, fig.align = 'c', message = F)
+library(ggplot2)
+library(dplyr)
+```
+
+## Gráficos Descriptivos
+
+```{r}
+# Lectura de datos
+bank2 <- read.csv("bank.csv")
+```
+
+```{r}
+bank2 <- bank2 %>% 
+            mutate(housing = case_when(housing == "yes" ~ "Housing = Yes",
+                                       housing == "no" ~ "Housing = No"
+                                       ))
+
+ggplot(bank2, aes(marital, fill = loan)) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 6.5, angle = 0)) +
+  geom_bar(position = "fill",
+           color="black") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values=c('#ff6347', '#7fff00')) +
+  labs(y = "Porcentaje",
+       x = "Grado") +
+  facet_grid(housing ~ education)
+```
+
+
