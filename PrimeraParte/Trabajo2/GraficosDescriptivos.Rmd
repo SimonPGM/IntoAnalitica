@@ -7,8 +7,9 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = F, fig.align = 'c', message = F)
-library(ggplot2)
-library(dplyr)
+library(tidyverse)
+library(ggpubr)
+library(naniar)
 ```
 
 ## Gráficos Descriptivos
@@ -18,23 +19,57 @@ library(dplyr)
 bank2 <- read.csv("bank.csv")
 ```
 
-```{r}
+```{r warning=F}
 bank2 <- bank2 %>% 
-            mutate(housing = case_when(housing == "yes" ~ "Housing = Yes",
-                                       housing == "no" ~ "Housing = No"
-                                       ))
+            mutate(housing = case_when(housing == "yes" ~ "Casa propia = Sí",
+                                       housing == "no" ~ "Casa propia = No"
+                                       ),
+                   marital = case_when(marital == "married" ~ "Casado",
+                                       marital == "divorced" ~ "Divorciado",
+                                       marital == "single" ~ "Soltero"),
+                   education = case_when(education == "primary" ~ "Primaria",
+                                         education == "secondary" ~ "Secundaria",
+                                         education == "tertiary" ~ "Terciaria",
+                                         education == "unknown" ~ "Desconocido"),
+                   education = fct_relevel(education, levels = c("Primaria",
+                                                                 "Secundaria",
+                                                                 "Terciaria",
+                                                                 "Desconocido")),
+                   loan = case_when(loan == "yes" ~ "Sí",
+                                    loan == "no" ~ "No")
+                   )
 
 ggplot(bank2, aes(marital, fill = loan)) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(size = 6.5, angle = 0)) +
+        axis.text.x = element_text(size = 5.5, angle = 0)) +
   geom_bar(position = "fill",
            color="black") +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_manual(values=c('#ff6347', '#7fff00')) +
   labs(y = "Porcentaje",
-       x = "Grado") +
+       x = "Estado civil",
+       fill = "Préstamo") +
   facet_grid(housing ~ education)
 ```
+
+```{r}
+p_age <- ggplot(bank2, aes(x=loan, y=age, fill = loan)) +
+  theme_bw() +
+  geom_boxplot() +
+  labs(x = "Préstamo",
+       fill = "Préstamo",
+       y = "Edad")
+
+p_balance <- ggplot(bank2, aes(x= loan, y = duration, fill = loan)) +
+  theme_bw() +
+  geom_boxplot() + 
+  labs(x = "Préstamo",
+       fill = "Préstamo",
+       y = "Duración del contacto")
+
+ggarrange(p_age, p_balance, ncol = 2)
+```
+
 
 

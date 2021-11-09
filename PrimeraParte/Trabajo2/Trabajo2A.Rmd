@@ -30,6 +30,7 @@ library(e1071)
 library(caret)
 library(MASS)
 library(pROC)
+library(ggpubr)
 ```
 
 \input{titlepage}
@@ -49,6 +50,67 @@ library(pROC)
 \newpage
 \section{Ejercicio 2} Considere el conjunto de datos anexo (bank.csv) el cual tiene 17
 variables. Asuma que el supervisor es la variable loan.
+
+\subsection{Análisis descriptivo}
+
+Como buena práctica estadística, se realiza un análisis exploratorio y descriptivo sobre la base de datos, se presentan los siguientes gráficos:
+
+```{r}
+# Lectura de datos
+bank2 <- read.csv("bank.csv")
+```
+
+```{r warning=F}
+bank2 <- bank2 %>% 
+            mutate(housing = case_when(housing == "yes" ~ "Casa propia = Sí",
+                                       housing == "no" ~ "Casa propia = No"
+                                       ),
+                   marital = case_when(marital == "married" ~ "Casado",
+                                       marital == "divorced" ~ "Divorciado",
+                                       marital == "single" ~ "Soltero"),
+                   education = case_when(education == "primary" ~ "Primaria",
+                                         education == "secondary" ~ "Secundaria",
+                                         education == "tertiary" ~ "Terciaria",
+                                         education == "unknown" ~ "Desconocido"),
+                   education = fct_relevel(education, levels = c("Primaria",
+                                                                 "Secundaria",
+                                                                 "Terciaria",
+                                                                 "Desconocido")),
+                   loan = case_when(loan == "yes" ~ "Sí",
+                                    loan == "no" ~ "No")
+                   )
+
+ggplot(bank2, aes(marital, fill = loan)) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 5.5, angle = 0)) +
+  geom_bar(position = "fill",
+           color="black") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values=c('#ff6347', '#7fff00')) +
+  labs(y = "Porcentaje",
+       x = "Estado civil",
+       fill = "Préstamo") +
+  facet_grid(housing ~ education)
+```
+
+```{r}
+p_age <- ggplot(bank2, aes(x=loan, y=age, fill = loan)) +
+  theme_bw() +
+  geom_boxplot() +
+  labs(x = "Préstamo",
+       fill = "Préstamo",
+       y = "Edad")
+
+p_balance <- ggplot(bank2, aes(x= loan, y = duration, fill = loan)) +
+  theme_bw() +
+  geom_boxplot() + 
+  labs(x = "Préstamo",
+       fill = "Préstamo",
+       y = "Duración del contacto")
+
+ggarrange(p_age, p_balance, ncol = 2)
+```
 
 \subsection{Literal (a)} Cree un conjunto de datos de entrenamiento del 75\% y el
 restante 25\% trátelo como datos de test o prueba.
@@ -215,11 +277,39 @@ más de chances de obtener un préstamo respecto a los divorciados.
 \subsection{Literal (e)} Con los datos de entrenamiento, implemente LDA usando 
 loan como supervisor y las demás como predictores.
 
-Para ajustar el modelo LDA se usó la función `lda()` de la librería `MASS` 
+Para ajustar el modelo LDA se usó la función `lda()` de la librería `MASS`. Se muestra la clasificación que realiza el modelo según covariables.
 
 ```{r lda}
 mod_lda <- lda(loan ~ ., data = bank_train)
 ```
+
+```{r lda-viz}
+# Se lee la bd con los resultados de la predicción de test
+# Tiene info interesante
+pred_lda <- read.csv("pred_lda_test.csv")
+
+# Se unen las predicciones con la BD test
+test_y <- cbind(bank_test, pred_lda)
+```
+
+```{r lda-viz 1}
+
+# Visualización
+ggplot(test_y, aes(x = age, y = duration, shape = class, color = class)) +
+  geom_point(size=0.9) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 5.5, angle = 0)) +
+  scale_fill_manual(values=c('#ff6347', '#7fff00')) +
+  labs(title = "Clasificación que realiza LDA según covariables") +
+  facet_grid(housing ~ education)
+```
+
+
+
+
+
+
 
 \subsection{Literal (f)} Con los datos de entrenamiento, para cada uno de los 
 métodos anteriores, calcule el training-MSE, la matriz de confusión y grafique 
@@ -355,6 +445,7 @@ pred_logit_test <- ifelse(predict(mod_logit, bank_test,
                             type = "response") > 0.5, "yes", "no")
 #LDA
 pred_lda_test <- predict(mod_lda, bank_test)
+#write.csv(pred_lda_test, file = "pred_lda_test.csv")
 
 #Exactitud
 exactitud_test <- cbind(validacion(bank_test_response, pred_nb_test, 
@@ -446,7 +537,7 @@ rm(numeric_test_nb, numeric_test_knn, numeric_logit_test, numeric_lda_test)
 
 
 ```{r borrando_todo}
-rm(list = ls())
+#rm(list = ls())
 ```
 
 
