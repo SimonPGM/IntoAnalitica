@@ -20,7 +20,7 @@ language: "es"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F, fig.align = 'c',  message = F)
+knitr::opts_chunk$set(echo = F, fig.align = 'center',  message = F)
 library(tidyverse)
 library(knitr)
 library(kableExtra)
@@ -51,15 +51,39 @@ library(ggpubr)
 
 \section{Ejercicio 1} Considere el estadístico leverage:
 
-$$
-h_{ii} = \frac{1}{n} + \frac{\left(x_i - \bar{x}\right)^2}{\sum_{i'=1}^n \left(x_{i'} - \bar{x} \right)^2}
-$$
+$$h_{ii} = \frac{1}{n} + \frac{(x_i - \overline{\rm x})^2}{\sum_{i' = 1}^{n} (x_{i'} - \overline{\rm x})^2}$$
 
-Demuestre que 
+Demuestre que $$\frac{1}{n} \leq h_{ii} \leq 1$$
 
-$$
-\frac{1}{n} \leq h_{ii} \leq 1
-$$
+\underline{Dem}: 
+
+Para la cota inferior basta con ver que la cantidad $\frac{(x_i - \overline{\rm x})^2}{\sum_{i' = 1}^{n} (x_{i'} - \overline{\rm x})^2} \geq 0$, 
+luego \newline $h_{ii} = \frac{1}{n} + \sum_{i' = 1}^{n} (x_{i'} - \overline{\rm x})^2 \geq \frac{1}{n}$.
+
+Para la cota superior, considere la matriz sombrero definida como $$H: = \mathbf{X} \left(\mathbf{X}^T \mathbf{X}\right)^{-1} \mathbf{X}^T$$.
+
+Note que $H$ es simétrica, pues $H^T  =(\mathbf{X}^T)^T \left[\left(\mathbf{X}^T \mathbf{X}\right)^{-1} \right]^T \mathbf{X}^T = \mathbf{X} \left(\mathbf{X}^T \mathbf{X}\right)^{-1} \mathbf{X}^T = H$
+ya que la matriz $\mathbf{X}^T \mathbf{X}$ es simétrica y por tanto su inversa también lo es, así esto implica que $[H]_{ij} = h_{ij} = h_{ji} = [H]_{ji}$.
+
+Además, observe que $H$ es idempotente, pues 
+\begin{equation*}
+	\begin{aligned}
+		H^2 &= H H \\
+			&= \mathbf{X} \underbrace{\left(\mathbf{X}^T \mathbf{X}\right)^{-1} \left(\mathbf{X}^T \mathbf{X} \right)}_{\mathbf{I}_n} \left(\mathbf{X}^T \mathbf{X}\right)^{-1} \mathbf{X}^T \\
+			&= \mathbf{X} \left(\mathbf{X}^T \mathbf{X}\right)^{-1} \mathbf{X}^T \\
+			&= H
+	\end{aligned}
+\end{equation*}
+
+\newpage
+
+Teniendo lo anterior en cuenta considere la entrada $ii$ de la matriz $H^2$, la cual se calcula como $\sum_{j = 1}^{n} h_{ij} h_{ji}$, pero, como $H$ es simétrica lo anterior
+se convierte en $\sum_{j = 1}^{n} h_{ij}^{2}$, adicionalmente, como $H$ es idempotente, $h_{ii} = \sum_{j = 1}^{n} h_{ij}^{2} \geq h_{ii}^{2}$ y así $h_{ii} \leq 1$.
+
+\begin{equation*}
+	\therefore \ \frac{1}{n} \leq h_{ii} \leq 1
+\end{equation*} 
+
 <!--- Juanjo y Santiago -->
 \newpage
 
@@ -317,8 +341,13 @@ kable(pred_lda[1:5,1:4],
       caption = "Primeras cinco filas de la salida del modelo LDA")
 ```
 
+Observe que en el análisis discriminante lineal se realiza el siguiente supuesto respecto a la  matriz de covariables $\mathbf{X}$:
 
-Se muestra gráficamente la clasificación que realiza el modelo según covariables.
+$$ \mathbf{X} \sim N(\mathbf{\mu_k, \mathbf{\Sigma}})$$
+
+Respecto a tal suposición se debe tener en cuenta que exige que todas las variables presentes en el modelo sean numéricas, y aunque a través de variables indicadoras se puede incluir a variables categóricas en el modelo, la suposición de normalidad para tales variables categóricas puede ser fácilmente violada. Esta violación puede afectar el desempeño del modelo. 
+
+Se muestra gráficamente la clasificación que realiza el modelo según covariables:
 
 ```{r lda-viz 1}
 
@@ -495,6 +524,8 @@ kable(exactitud_test, longtable = T, booktabs = T,
       caption = "MSE en los datos de prueba")
 ```
 
+\newpage
+
 \subsubsection{Matrices de confusión de prueba}
 
 ```{r matrices_confusion_g}
@@ -583,9 +614,9 @@ ggpubr::ggarrange(p1_test, p2_test, p3_test, p4_test)
 
 ¿Con cuál modelo observó un mejor desempeño y porqué?
 
-En general, los modelos registran un buen desempeño en relación con la métrica de especificidad, sin embargo, tienen muy baja sensibilidad: La probabilidad de que los modelos identifiquen correctamente como loan = Sí cuando el sujeto es en realidad  loan = Sí es baja. El modelo \textbf{Naive Bayes} presenta los mejores resultados en cuanto a esta última métrica, y aunque presenta un valor más bajo en cuanto a la especificidad, tiene el AUC (área bajo la curva ROC) más grande, por lo tanto \textbf{se elige como el de mejor desempeño.} 
+En general, los modelos registran un buen desempeño en relación con la métrica de especificidad, sin embargo, tienen muy baja sensibilidad: La probabilidad de que los modelos identifiquen correctamente como préstamo = Sí cuando el sujeto es en realidad  préstamo = Sí es baja. El modelo \textbf{Naive Bayes} presenta los mejores resultados en cuanto a esta última métrica, y aunque presenta un valor más bajo en cuanto a la especificidad, tiene el AUC (área bajo la curva ROC) más grande, por lo tanto \textbf{se elige como el de mejor desempeño.} 
 
-En una situación real, según los requerimiento de negocio, se debería identificar si los falsos positivos o verdaderos negativos son más costosos en términos de recursos del problema.
+En una situación real, según los requerimientos de negocio, se debería identificar si los falsos positivos o verdaderos negativos son más costosos en términos de recursos del problema.
 
 ```{r borrando_todo}
 #rm(list = ls())
@@ -609,7 +640,11 @@ datos <- read.csv("costumer_loan_details.csv", header = T, sep = ",", dec = ".")
 ```
 
 ```{r mostrando datos}
-kable(head(datos), caption = "Estructura de los datos", align = 'c', longtable = T)
+kable(head(datos[,c(1,2:7)]), caption = "Estructura de los datos - Parte1", align = 'c', longtable = T, booktabs = T)
+```
+
+```{r mostrando datos2}
+kable(head(datos[,c(1,8:12)]), caption = "Estructura de los datos - Parte2", align = 'c', longtable = T, booktabs = T)
 ```
 
 \subsection{Literal (a)} Cree un conjunto de datos de entrenamiento del 
@@ -630,7 +665,7 @@ Con esto, se obtienen 86 observaciones en los datos de entrenamiento y 28 observ
 (con al menos tres valores para $K$) usando income como el supervisor y 
 debts como predictor. Grafique e interprete.
 
-Dicho lo anterior, se procede a obtener tres modelos usando regresión KNN donde k tomará los valores de 5, 10, 20 y 50 respectivamente. El resultado obtenido se muetra como sigue:
+Dicho lo anterior, se procede a obtener cuatro modelos usando regresión KNN donde K tomará los valores de 5, 10, 20 y 50 respectivamente. El resultado obtenido se muestra como sigue:
 
 ```{r modelando knn reg}
 knn35 <-  FNN::knn.reg(datos.train$income, 
@@ -665,7 +700,7 @@ pknn35 <- ggplot(datos, aes(income, debts)) +
           geom_path(data = data.frame(income = seq(min(datos.train$income),                                                               max(datos.train$income),
                                                    by=0.02),                                                                 debts = knn35$pred), 
                     colour = "orange") + 
-          labs(title = "Regresión KNN para Income vs Debts", caption = "K = 5") +
+          labs(title = "Regresión KNN para \nIncome vs Debts", caption = "K = 5") +
           xlab("Income") +
           ylab("Debts") + 
           theme_minimal() + 
@@ -676,7 +711,7 @@ pknn310 <-ggplot(datos, aes(income, debts)) +
           geom_path(data = data.frame(income = seq(min(datos.train$income),                                                               max(datos.train$income),
                                                    by=0.02),                                                                 debts = knn310$pred), 
                     colour = "red") + 
-          labs(title = "Regresión KNN para Income vs Debts", caption = "K = 10") +
+          labs(title = "Regresión KNN para \nIncome vs Debts", caption = "K = 10") +
           xlab("Income") +
           ylab("Debts") + 
           theme_minimal() + 
@@ -687,7 +722,7 @@ pknn320 <-ggplot(datos, aes(income, debts)) +
           geom_path(data = data.frame(income = seq(min(datos.train$income),                                                               max(datos.train$income),
                                                    by=0.02),                                                                 debts = knn320$pred), 
                     colour = "blue") + 
-          labs(title = "Regresión KNN para Income vs Debts", caption = "K = 20") +
+          labs(title = "Regresión KNN para \nIncome vs Debts", caption = "K = 20") +
           xlab("Income") +
           ylab("Debts") + 
           theme_minimal() + 
@@ -698,7 +733,7 @@ pknn350<-ggplot(datos, aes(income, debts)) +
           geom_path(data = data.frame(income = seq(min(datos.train$income),                                                               max(datos.train$income),
                                                    by=0.02),                                                                 debts = knn350$pred), 
                     colour = "green") + 
-          labs(title = "Regresión KNN para Income vs Debts", caption = "K = 50") +
+          labs(title = "Regresión KNN para \nIncome vs Debts", caption = "K = 50") +
           xlab("Income") +
           ylab("Debts") + 
           theme_minimal() + 
@@ -722,7 +757,7 @@ mod3 <- stats::lm(debts~income, data = datos.train)
 ```
 
 \begin{center}
-$\widehat{debts} = -882.11 +  0.37 * \text{income}$
+$\widehat{\text{debts}}_{i} = -882.11 +  0.37 \times \text{income}_i$
 \end{center}
 
 Para visualizar el ajuste de este modelo a los datos originales se plantea el siguiente gráfico:
@@ -746,7 +781,7 @@ modelos anteriores y con el conjunto de prueba, calcule el test-MSE, ¿Qué obse
 Recuérdese que el MSE es una medida de desempeño para modelos de diferentes tipos, y en este caso se desean comparar los modelos anteriormente construídos utilizando esta métrica, siendo el mejor modelo aquel que tenga el menor MSE. Esta medida de desempeño tiene la siguiente especificación:
 
 \begin{center}
-$ECM = \frac{1}{n} \sum_{i=1}^{n}(\hat{y}_{i}-y_{i})^2$
+$$MSE = \frac{1}{n} \sum_{i=1}^{n}(\hat{y}_{i}-y_{i})^2$$
 \end{center}
 
 Así entonces, evaluando todos los modelos en el conjunto de prueba se obtienen los siguientes resultados:
@@ -776,14 +811,15 @@ mse <- function(real, predicted){
 mse.table <- data.frame("Modelo" = "MSE",
                         "Regresión" = mse(datos.test$debts, regtest),
                         "$K=5$" = mse(datos.test$debts, knntest5),
-                        "$k=10$" = mse(datos.test$debts, knntest10),
+                        "$K=10$" = mse(datos.test$debts, knntest10),
                         "$K=20$" = mse(datos.test$debts, knntest20),
                         "$K=50$" = mse(datos.test$debts, knntest50))
 
-kable(mse.table, caption = "Resultados de Desempeño", align = 'c', longtable = T)
+kable(mse.table, caption = "Resultados de Desempeño", align = 'c', longtable = T, booktabs = T, escape = T,
+      col.names = c("Modelo", "Regresión", "K = 5", "K = 10", "K = 20", "K = 50"))
 ```
 
-Así, se puede apreciar que el menor MSE lo reporta el modelo de regresión lineal simple. El mejor modelo de regresión KNN fué aquel que se escogió con 10 vecinos más cercanos, dado que entre este tipo de modelos fué el que menor MSE presentó. Todo este resultado se obtuvo a partir de los datos de test.
+Así, se puede apreciar que el menor MSE lo reporta el modelo de regresión lineal simple. El mejor modelo de regresión KNN fue aquel que se escogió con 10 vecinos más cercanos, dado que entre este tipo de modelos fue el que menor MSE presentó. Todo este resultado se obtuvo a partir de los datos de test.
 
 \subsection{Literal (e)} Usando todos los datos y regresión lineal múltiple 
 seleccione un modelo usando forward, backward y stepwise.
@@ -850,6 +886,6 @@ kable(data.frame(c("Saturado", "Depurado"),
       longtable = T)
 ```
 
-Así, se puede decidir por cualquier modelo de estos dos teniendo en cuenta alguna de las métricas presentadas anteriormente. Sin embargo, en este caso por parsimonia y teniendo en cuenta el criterio de información de Akaike, se escoje el modelo obtenido realizando el debido procedimeinto de selección de variables.
+Así, se puede decidir por cualquier modelo de estos dos teniendo en cuenta alguna de las métricas presentadas anteriormente. Sin embargo, en este caso por parsimonia y teniendo en cuenta el criterio de información de Akaike, se escoje el modelo obtenido realizando el debido procedimiento de selección de variables.
 
 
