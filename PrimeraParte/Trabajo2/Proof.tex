@@ -1,0 +1,32 @@
+1. Considere el estadístico leverage:  
+$$h_{ii} = \frac{1}{n} + \frac{(x_i - \overline{\rm x})^2}{\sum_{i' = 1}^{n} (x_{i'} - \overline{\rm x})^2}$$
+
+Demuestre que $$\frac{1}{n} \leq h_{ii} \leq 1$$
+
+\underline{Dem}: 
+
+Para la cota inferior basta con ver que la cantidad $\frac{(x_i - \overline{\rm x})^2}{\sum_{i' = 1}^{n} (x_{i'} - \overline{\rm x})^2} \geq 0$, 
+luego $h_{ii} = \frac{1}{n} + \sum_{i' = 1}^{n} (x_{i'} - \overline{\rm x})^2 \geq \frac{1}{n}$.
+
+Para la cota superior, considere la matriz sombrero definida como $$H: = \mathbf{X} \left(\mathbf{X}^T \mathbf{X}\right)^{-1} \mathbf{X}^T$$.
+
+Note que $H$ es simétrica, pues $H^T =  (\mathbf{X}^T)^T \left[\left(\mathbf{X}^T \mathbf{X}\right)^{-1} \right]^T \mathbf{X}^T = \mathbf{X} \left(\mathbf{X}^T \mathbf{X}\right)^{-1} \mathbf{X}^T$
+ya que la matriz $\mathbf{X}^T \mathbf{X}$ es simétrica y por tanto su inversa también lo es, así esto implica que $[H]_{ij} = h_{ij} = h_{ji} = [H]_{ji}$.
+
+Además, observe que $H$ es idempotente, pues 
+\begin{equation*}
+	\begin{aligned}
+		H^2 &= H H \\
+			&= \mathbf{X} \underbrace{\left(\mathbf{X}^T \mathbf{X}\right)^{-1} \left(\mathbf{X}^T \mathbf{X} \right)}_{\mathbf{I}_n} \left(\mathbf{X}^T \mathbf{X}\right)^{-1} \mathbf{X}^T \\
+			&= \mathbf{X} \left(\mathbf{X}^T \mathbf{X}\right)^{-1} \mathbf{X}^T \\
+			&= H
+	\end{aligned}
+\end{equation*}
+
+
+Teniendo lo anterior en cuenta considere la entrada $ii$ de la matriz $H^2$, la cual se calcula como $\sum_{j = 1}^{n} h_{ij} h_{ji}$, pero, como $H$ es simétrica lo anterior
+se convierte en $\sum_{j = 1}^{n} h_{ij}^{2}$, adicionalmente, como $H$ es idempotente, $h_{ii} = \sum_{j = 1}^{n} h_{ij}^{2} \geq h_{ii}^{2}$ y así $h_{ii} \leq 1$.
+
+\begin{equation*}
+	\therefore \ \frac{1}{n} \leq h_{ii} \leq 1
+\end{equation*} 
