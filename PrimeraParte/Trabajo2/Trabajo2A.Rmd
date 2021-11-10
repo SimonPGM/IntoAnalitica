@@ -150,7 +150,7 @@ Antes de ajustar el modelo, la variable día del mes se convirtió en factor ya 
 ```{r tablas_naive_bayes}
 #housing
 aux_housing <- mod_naive_bayes$tables$housing
-rownames(aux_housing) <- c("No", "Sí")
+rownames(aux_housing) <- c("Y = No", "Y = Sí")
 kable(aux_housing %>% round(4), 
       booktabs = T, 
       caption = "Alojamiento", 
@@ -160,7 +160,7 @@ kable(aux_housing %>% round(4),
 
 #default
 aux_default <- mod_naive_bayes$tables$default
-rownames(aux_default) <- c("No", "Sí")
+rownames(aux_default) <- c("Y = No", "Y = Sí")
 kable(aux_default %>% round(4), 
       booktabs = T, 
       caption = "Entrar en deuda", 
@@ -170,7 +170,7 @@ kable(aux_default %>% round(4),
 
 #age
 aux_age <- mod_naive_bayes$tables$age
-rownames(aux_age) <- c("No", "Sí")
+rownames(aux_age) <- c("Y = No", "Y = Sí")
 kable(aux_age %>% round(4), 
       booktabs = T, 
       caption = "Edad", 
@@ -277,7 +277,7 @@ más de chances de obtener un préstamo respecto a los divorciados.
 \subsection{Literal (e)} Con los datos de entrenamiento, implemente LDA usando 
 loan como supervisor y las demás como predictores.
 
-Para ajustar el modelo LDA se usó la función `lda()` de la librería `MASS`. Se muestra la clasificación que realiza el modelo según covariables.
+Para ajustar el modelo LDA se usó la función `lda()` de la librería `MASS`. 
 
 ```{r lda}
 mod_lda <- lda(loan ~ ., data = bank_train)
@@ -291,6 +291,19 @@ pred_lda <- read.csv("pred_lda_test.csv")
 # Se unen las predicciones con la BD test
 test_y <- cbind(bank_test, pred_lda)
 ```
+
+La salida del modelo LDA entrega la clase en que fue clasificada cada observación y la probabilidad a posteriori, siguiendo el paradigma bayesiano de que la observación sea de una u otra clase. Se muestra tal salida para las primeros cinco observaciones del conjunto de prueba:
+
+```{r}
+kable(pred_lda[1:5,1:4],
+      longtable = T,
+      booktabs = T,
+      col.names = c("Obs", "Clase", "Posterior - No", "Posterior - Sí"),
+      caption = "Primeras cinco filas de la salida del modelo LDA")
+```
+
+
+Se muestra gráficamente la clasificación que realiza el modelo según covariables.
 
 ```{r lda-viz 1}
 
@@ -321,10 +334,11 @@ la curva ROC.
 validacion <- function(observados, ajustados, caption = " "){
   accuracy <- Metrics::accuracy(observados, ajustados)
   matriz_confusion <- table(Observados = observados, Ajustados = ajustados)
-  rownames(matriz_confusion) <- c("No", "Sí")
+  rownames(matriz_confusion) <- c("Y = No", "Y = Sí")
   matriz_confusion <- kable(matriz_confusion,
                             longtable = T, booktabs = T, caption = caption,
-                            col.names = c("No", "Sí"))
+                            col.names = c("No", "Sí")) %>%
+  add_header_above(c(" " = 1, "Valores predichos" = 2))
   overall <- list(Accuracy = accuracy, Confusion_matrix = matriz_confusion)
   return(overall)
 }
@@ -486,28 +500,41 @@ validacion(bank_test_response, pred_lda_test$class,
 numeric_test_label <- ifelse(bank_test_response == "yes", 1, 0)
 numeric_test_nb <- ifelse(pred_nb_test == "yes", 1, 0)
 
+
+
+
+
+
+
 #Curvas ROC
 #Naive - Bayes
 roc_nb_test <- roc(numeric_test_label, numeric_test_nb)
+auc_nb <- round(auc(numeric_test_label, numeric_test_nb),4)
+
 p1_test <- ggroc(roc_nb_test) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "tomato", linetype = "dashed") +
   labs(title = "Naive - Bayes", x = "Especificidad",
        y = "Sensibilidad") + 
-  theme_minimal()
+  theme_minimal() +
+  annotate("text", x = 0.75, y = 0.75, label = paste("AUC = ", auc_nb))
 
 #KNN
 numeric_test_knn <- ifelse(pred_knn_test == "yes", 1, 0)
+auc_knn <- round(auc(numeric_test_label, numeric_test_knn),4)
 roc_knn_test <- roc(numeric_test_label, numeric_test_knn)
+
 p2_test <- ggroc(roc_knn_test) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "darkblue", linetype = "dashed") +
   labs(title = "KNN", x = "Especificidad",
        y = "Sensibilidad") + 
-  theme_minimal()
+  theme_minimal()  +
+  annotate("text", x = 0.75, y = 0.75, label = paste("AUC = ", auc_knn))
 
 #Logistica
 numeric_logit_test <- ifelse(pred_logit_test == "yes", 1, 0)
+auc_logit <- round(auc(numeric_test_label, numeric_logit_test),4)
 
 roc_logit_test <- roc(numeric_test_label, numeric_logit_test)
 p3_test <- ggroc(roc_logit_test) +
@@ -515,26 +542,35 @@ p3_test <- ggroc(roc_logit_test) +
                    y = 0, yend = 1), color = "purple", linetype = "dashed") +
   labs(title = "Regresión logística", x = "Especificidad",
        y = "Sensibilidad") + 
-  theme_minimal()
+  theme_minimal() +
+  annotate("text", x = 0.75, y = 0.75, label = paste("AUC = ", auc_logit))
 
 #LDA
 numeric_lda_test <- ifelse(pred_lda_test$class == "yes", 1, 0)
-
 roc_lda_test <- roc(numeric_test_label, numeric_lda_test)
+auc_lda <- round(auc(numeric_test_label, numeric_lda_test),4)
+
 p4_test <- ggroc(roc_lda_test) +
   geom_segment(aes(x = 1, xend = 0,
                    y = 0, yend = 1), color = "darkgreen", linetype = "dashed") +
   labs(title = "LDA", x = "Especificidad",
        y = "Sensibilidad") + 
-  theme_minimal()
+  theme_minimal() +
+  annotate("text", x = 0.75, y = 0.75, label = paste("AUC = ", auc_lda))
 
 ggpubr::ggarrange(p1_test, p2_test, p3_test, p4_test)
 
-rm(numeric_test_nb, numeric_test_knn, numeric_logit_test, numeric_lda_test)
+#rm(numeric_test_nb, numeric_test_knn, numeric_logit_test, numeric_lda_test)
 
 ```
 
+\subsection{Literal (h)}
 
+¿Con cuál modelo observó un mejor desempeño y porqué?
+
+En general, los modelos registran un buen desempeño en relación con la métrica de especificidad, sin embargo, tienen muy baja sensibilidad: La probabilidad de que los modelos identifiquen correctamente como loan = Sí cuando el sujeto es en realidad  loan = Sí es baja. El modelo \textbf{Naive Bayes} presenta los mejores resultados en cuanto a esta última métrica, y aunque presenta un valor más bajo en cuanto a la especificidad, tiene el AUC (área bajo la curva ROC) más grande, por lo tanto \textbf{se elige como el de mejor desempeño.} 
+
+En una situación real, según los requerimiento de negocio, se debería identificar si los falsos positivos o verdaderos negativos son más costosos en términos de recursos del problema.
 
 ```{r borrando_todo}
 #rm(list = ls())
