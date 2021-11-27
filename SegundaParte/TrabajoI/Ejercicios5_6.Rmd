@@ -146,7 +146,7 @@ A continuación se realiza el proceso de selección de variables y modelos usand
 all_covs <- regsubsets(y ~ ., nvmax = 8, data = Survival)
 res_all_covs <- summary(all_covs)
 
-#plots
+# plots
 # num_covs <- 1:8
 # RSS <- res_all_covs$rss
 # RSS_all_covs <- (ggplot(mapping = aes(x = num_covs, 
@@ -222,7 +222,6 @@ R2_adj_all_covs_vars <- plot(all_covs, scale = "adjr2",
                              main = TeX("$R_{Adj}^2$"))
 Cp_all_covs_vars <- plot(all_covs, scale = "Cp", main = TeX("$C_p$"))
 BIC_all_covs_vars <- plot(all_covs, scale = "bic", main = "BIC")
-
 ```
 
 Se tienen las siguiente covariables como las más importantes
@@ -233,6 +232,188 @@ Se tienen las siguiente covariables como las más importantes
 ## Selección hacia adelante
 
 ```{r forward_selection}
+rm(list = setdiff(ls(), "Survival"))
+forward_selection <- regsubsets(y ~ ., nvmax = 8, data = Survival, 
+                                method = "forward")
+res_forward <- summary(forward_selection)
+
+# plots
+# num_covs <- 1:8
+# RSS <- res_forward$rss
+# RSS_forward <- (ggplot(mapping = aes(x = num_covs, 
+#                                       y = RSS)) +
+#   geom_line() +
+#   labs(x = "Número de covariables", y = "RSS", 
+#        title = "Selección hacia adelante") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("RSS_forward.Rds")
+# rm(RSS)
+# 
+# Adj_r2 <- res_forward$adjr2
+# x_max_adjr2 <- which.max(res_forward$adjr2)
+# max_adjr2 <- res_forward$adjr2[which.max(res_forward$adjr2)]
+#
+# Adj_R2_forward <- (ggplot(mapping = aes(x = num_covs, 
+#                                          y = Adj_r2)) +
+#                       geom_line() +
+#                       labs(x = "Número de covariables", 
+#                            y = "Coeficiente de determinación ajustado",
+#                            title = "Selección hacia adelante") +
+#                       geom_point(aes(x = x_max_adjr2,
+#                                      y = max_adjr2), col = "red") + 
+#                       theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("Adj_R2_forward.Rds")
+# 
+# Cp <- res_forward$cp
+# x_min_Cp <- which.min(res_forward$cp)
+# min_Cp <- res_forward$cp[which.min(res_forward$cp)]
+# 
+# Cp_forward <- (ggplot(mapping = aes(x = num_covs, 
+#                                     y = Cp)) +
+#   geom_line() +
+#   labs(x = "Número de covariables", y = "Cp de Mallows",
+#        title = "Selección hacia adelante") +
+#   geom_point(aes(x = x_min_Cp, y = min_Cp), col = "red") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("Cp_forward.Rds")
+# 
+# BIC <- res_forward$bic
+# x_min_BIC <- which.min(res_forward$bic)
+# min_BIC <- res_forward$bic[which.min(res_forward$bic)]
+# 
+# BIC_forward <- (ggplot(mapping = aes(x = num_covs, y = BIC)) +
+#   geom_line() +
+#   labs(x = "Número de covariables", y = "BIC",
+#        title = "Selección hacia adelante") +
+#   geom_point(aes(x = x_min_BIC, y = min_BIC), col = "red") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("BIC_forwards.Rds")
+
+RSS_forward <- readRDS("PlotsJuanjo/RSS_forward.Rds")
+Adj_R2_forward <- readRDS("PlotsJuanjo/Adj_R2_forward.Rds")
+Cp_forward <- readRDS("PlotsJuanjo/Cp_forward.Rds")
+BIC_forward <- readRDS("PlotsJuanjo/BIC_forwards.Rds")
+
+subplot(RSS_forward, Adj_R2_forward, Cp_forward, BIC_forward, 
+        nrows = 2)
+```
+
+En esta situación, $R_{\text{Adj}}^2, \ C_p \text{ de Mallows y BIC}$ llegan a un concenso y todos consideran que el mejor modelo es aquel que considera 5 covariables; note además que la suma cuadrática de los residuales deja de tener un cambio notable justamente en el mejor modelo con 5 covariables.
+
+```{r matriz_forward}
+R2_adj_forward_vars <- plot(forward_selection, scale = "adjr2", 
+                             main = TeX("$R_{Adj}^2$"))
+Cp_forward_vars <- plot(forward_selection, scale = "Cp", main = TeX("$C_p$"))
+BIC_forward_vars <- plot(forward_selection, scale = "bic", main = "BIC")
+```
+
+Todas las métricas de desempeño consideradas llegan a que el mejor modelo es 
+aquel que usa las covariables bcs, pindex, enezyme_test, liver_test y alc_heavy.
+
+## Selección hacia atrás 
+
+```{r backward_selection}
+rm(list = setdiff(ls(), "Survival"))
+backward_selection <- regsubsets(y ~ ., nvmax = 8, data = Survival, 
+                                method = "backward")
+res_backward <- summary(backward_selection)
+
+# plots
+# num_covs <- 1:8
+# RSS <- res_backward$rss
+# RSS_backward <- (ggplot(mapping = aes(x = num_covs, 
+#                                       y = RSS)) +
+#   geom_line() +
+#   labs(x = "Número de covariables", y = "RSS", 
+#        title = "Selección hacia atrás") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("RSS_backward.Rds")
+# rm(RSS)
+# 
+# Adj_r2 <- res_backward$adjr2
+# x_max_adjr2 <- which.max(res_backward$adjr2)
+# max_adjr2 <- res_backward$adjr2[which.max(res_backward$adjr2)]
+# 
+# Adj_R2_backward <- (ggplot(mapping = aes(x = num_covs, 
+#                                          y = Adj_r2)) +
+#                       geom_line() +
+#                       labs(x = "Número de covariables", 
+#                            y = "Coeficiente de determinación ajustado",
+#                            title = "Selección hacia atrás") +
+#                       geom_point(aes(x = x_max_adjr2,
+#                                      y = max_adjr2), col = "red") + 
+#                       theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("Adj_R2_backward.Rds")
+# 
+# Cp <- res_backward$cp
+# x_min_Cp <- which.min(res_backward$cp)
+# min_Cp <- res_backward$cp[which.min(res_backward$cp)]
+# 
+# Cp_backward <- (ggplot(mapping = aes(x = num_covs, 
+#                                     y = Cp)) +
+#   geom_line() +
+#   labs(x = "Número de covariables", y = "Cp de Mallows",
+#        title = "Selección hacia atrás") +
+#   geom_point(aes(x = x_min_Cp, y = min_Cp), col = "red") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("Cp_backward.Rds")
+# 
+# BIC <- res_backward$bic
+# x_min_BIC <- which.min(res_backward$bic)
+# min_BIC <- res_backward$bic[which.min(res_backward$bic)]
+# 
+# BIC_backward <- (ggplot(mapping = aes(x = num_covs, y = BIC)) +
+#   geom_line() +
+#   labs(x = "Número de covariables", y = "BIC",
+#        title = "Selección hacia atrás") +
+#   geom_point(aes(x = x_min_BIC, y = min_BIC), col = "red") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("BIC_backward.Rds")
+
+RSS_backward <- readRDS("PlotsJuanjo/RSS_backward.Rds")
+Adj_R2_backward <- readRDS("PlotsJuanjo/Adj_R2_backward.Rds")
+Cp_backward <- readRDS("PlotsJuanjo/Cp_backward.Rds")
+BIC_backward <- readRDS("PlotsJuanjo/BIC_backward.Rds")
+
+subplot(RSS_backward, Adj_R2_backward, Cp_backward, BIC_backward, 
+        nrows = 2)
 
 ```
+
+
+```{r matriz_backward}
+R2_adj_backward_vars <- plot(backward_selection, scale = "adjr2", 
+                             main = TeX("$R_{Adj}^2$"))
+Cp_backward_vars <- plot(backward_selection, scale = "Cp", main = TeX("$C_p$"))
+BIC_backward_vars <- plot(backward_selection, scale = "bic", main = "BIC")
+```
+
+Las conclusiones del método backward son las mismas que las del método de mejor subconjunto, escogiendo como mejores covariables:
+
+* bcs, pindex, enezyme_test, liver_test y alc_heavy según $R_{\text{Adj}}^2$ 
+* bcs, pindex, enezyme_test, y alc_heavy según $C_p$ de Mallows y el BIC.
+
+## Conclusiones
+
+* En general, las covariables bcs, pindex, enezyme_test y alc_heavy deben ser
+consideradas para explicar la variabilidad de la respuesta, pues fueron escogidas 
+por la métricas que previenen el sobreajuste en cada caso.
+* Se puede considerar el regresor liver_test ya que figuró como una variable
+importante en algunos ocasiones (todos los modelos de selección hacia adelante 
+y algunos de selección hacia atrás y mejor subconjunto). 
+* Las demás covariables no figuraron en los modelos considerados, por lo tanto 
+estas no deben ser muy útiles para explicar la variabilidad de la respuesta y 
+se pueden omitir.
+
+# Selección usando Cross - Validation
+
+
 
