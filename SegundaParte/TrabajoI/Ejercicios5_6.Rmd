@@ -1,0 +1,238 @@
+---
+title: "Actividades clases 4 y 5"
+author: "Juan José Galeano Arenas"
+date: "26/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, fig.pos = "center")
+library(knitr)
+library(tidyverse)
+library(ggcorrplot)
+library(plotly)
+library(leaps)
+library(olsrr)
+library(latex2exp)
+```
+
+# Análisis descriptivo
+
+A continuación se presenta un breve resumen de la estructura de la base 
+de datos en cuestión
+
+```{r BD_Act4}
+Survival <- surgical %>%
+  mutate(gender = as.factor(gender),
+         alc_mod = as.factor(alc_mod),
+         alc_heavy = as.factor(alc_heavy))
+head(Survival, 5) %>% 
+  kable(longtable = T, align = "c")
+```
+
+ahora se presentan algunos gráficos para tener una idea de cuales variables
+pueden ser importantes para el modelo.
+
+```{r hists_4}
+#Funcion para sacar Sturges
+MySturges <- function(x){
+  pretty(range(x),
+       n = nclass.Sturges(x), 
+       min.n = 1)
+}
+
+#Continuas
+# hist_bcs <- (ggplot(data = Survival, aes(x = bcs)) +
+#   geom_histogram(breaks = MySturges(Survival$bcs), 
+#                  col = "darkgreen", fill = "green") + 
+#   labs(x = "Blood clotting score", y = "Frecuencia") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("hist_bcs.Rds")
+# 
+# hist_pindex <- (ggplot(data = Survival, aes(x = pindex)) +
+#   geom_histogram(breaks = MySturges(Survival$pindex),
+#                  col = "darkblue", fill = "blue") +
+#   labs(x = "Prognostic index", y = "Frecuencia") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("hist_pindex.Rds")
+# 
+# hist_enzyme <- (ggplot(data = Survival, aes(x = enzyme_test)) +
+#   geom_histogram(breaks = MySturges(Survival$enzyme_test),
+#                  col = "darkred", fill = "red") +
+#   labs(x = "Enzyme function test score", y = "Frecuencia") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("hist_enzyme.Rds")
+# 
+# hist_liver <- (ggplot(data = Survival, aes(x = enzyme_test)) +
+#   geom_histogram(breaks = MySturges(Survival$enzyme_test),
+#                  col = "gold", fill = "yellow") +
+#   labs(x = "Liver function test score", y = "Frecuencia") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("hist_liver.Rds")
+
+hist_bcs <- readRDS("PlotsJuanjo/hist_bcs.Rds")
+hist_pindex <- readRDS("PlotsJuanjo/hist_pindex.Rds")
+hist_enzyme <- readRDS("PlotsJuanjo/hist_enzyme.Rds")
+hist_liver <- readRDS("PlotsJuanjo/hist_liver.Rds")
+
+subplot(hist_bcs, hist_pindex, hist_enzyme, hist_liver,
+        nrows = 2)
+```
+
+Observe que los histogramas para las distribuciones continuas son todos
+asimétricos lo cual sugiere que estas variables no se distribuyen normal.
+
+```{r boxplots_4_corr, warning=F}
+# bp_age_gender <- (ggplot(data = Survival, 
+#                         aes(x = gender, y = age, 
+#                             col = gender)) +
+#   geom_boxplot() +
+#   labs(x = "Género", y = "Edad", colour = "Género") +
+#   scale_x_discrete(labels = c("Masculino", "Femenino")) +
+#   scale_colour_discrete(labels = c("M", "F")) +
+#   theme_minimal()) %>%
+#   ggplotly %>%
+#   write_rds("bp_age_gender.Rds")
+# 
+# bp_age_mod <- (ggplot(data = Survival, aes(x = alc_mod, y = age,
+#                                           col = alc_mod)) +
+#   geom_boxplot() +
+#   labs(x = "Historial de alcohol", y = "Edad", colour = "Alcohol") +
+#   scale_x_discrete(labels = c("No toma", "Toma moderado")) +
+#   scale_colour_discrete(labels = c("No", "Moderado")) +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("bp_age_mod.Rds")
+# 
+# bp_age_heavy <- (ggplot(data = Survival, aes(x = alc_heavy, y = age,
+#                                           col = alc_heavy)) +
+#   geom_boxplot() +
+#   labs(x = "Historial de alcohol", y = "Edad", colour = "Alcohol") +
+#   scale_x_discrete(labels = c("No toma", "Toma mucho")) +
+#   scale_colour_discrete(labels = c("No", "Alto")) +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("bp_age_heavy.Rds")
+
+#Matriz de correlación
+#Se deja en stand by de momento
+corr_matrix <- (ggcorrplot(cor(Survival[1:5]), method = "circle",
+                          hc.order = T))
+
+
+bp_age_gender <- readRDS("PlotsJuanjo/bp_age_gender.Rds")
+bp_age_mod <- readRDS("PlotsJuanjo/bp_age_mod.Rds")
+bp_age_heavy <- readRDS("PlotsJuanjo/bp_age_heavy.Rds")
+
+subplot(bp_age_gender, bp_age_mod, bp_age_heavy, nrows = 2)
+```
+
+Observe que las correlaciones entre las variables numéricas es moderada lo
+es deseable para evitar potenciales problemas de multicolinealidad. 
+Por otro lado, los boxplots no muestran diferencias entre los promedios 
+de edad respecto al género o consumo de alcohol (ya sea moderado o alto).
+
+# Selección de variables
+
+## Mejor subconjunto
+
+A continuación se realiza el proceso de selección de variables y modelos usando las metodologías directa (usando cross - validation) e indirecta (usando mejor subconjunto, selección hacia adelante y hacia atrás).
+
+```{r Mejor_subconjunto}
+all_covs <- regsubsets(y ~ ., nvmax = 8, data = Survival)
+res_all_covs <- summary(all_covs)
+
+#plots
+# num_covs <- 1:8
+# RSS <- res_all_covs$rss
+# RSS_all_covs <- (ggplot(mapping = aes(x = num_covs, 
+#                                       y = RSS)) +
+#   geom_line() +
+#   labs(x = "Número de covariables", y = "RSS", 
+#        title = "Mejor subconjunto") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("RSS_all_covs.Rds")
+# rm(RSS)
+# 
+# Adj_r2 <- res_all_covs$adjr2
+# x_max_adjr2 <- which.max(res_all_covs$adjr2)
+# max_adjr2 <- res_all_covs$adjr2[which.max(res_all_covs$adjr2)]
+# Adj_R2_all_covs <- (ggplot(mapping = aes(x = num_covs, 
+#                                          y = Adj_r2)) +
+#                       geom_line() +
+#                       labs(x = "Número de covariables", 
+#                            y = "Coeficiente de determinación ajustado",
+#                            title = "Mejor subconjunto") +
+#                       geom_point(aes(x = x_max_adjr2,
+#                                      y = max_adjr2), col = "red") + 
+#                       theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("Adj_R2_all_covs.Rds")
+# 
+# Cp <- res_all_covs$cp
+# x_min_Cp <- which.min(res_all_covs$cp)
+# min_Cp <- res_all_covs$cp[which.min(res_all_covs$cp)]
+# 
+# Cp_all_covs <- (ggplot(mapping = aes(x = num_covs, 
+#                                     y = Cp)) +
+#   geom_line() +
+#   labs(x = "Número de covariables", y = "Cp de Mallows",
+#        title = "Mejor subconjunto") +
+#   geom_point(aes(x = x_min_Cp, y = min_Cp), col = "red") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("Cp_all_covs.Rds")
+# 
+# BIC <- res_all_covs$bic
+# x_min_BIC <- which.min(res_all_covs$bic)
+# min_BIC <- res_all_covs$bic[which.min(res_all_covs$bic)]
+# 
+# BIC_all_covs <- (ggplot(mapping = aes(x = num_covs, y = BIC)) +
+#   geom_line() +
+#   labs(x = "Número de covariables", y = "BIC",
+#        title = "Mejor subconjunto") +
+#   geom_point(aes(x = x_min_BIC, y = min_BIC), col = "red") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("BIC_all_covs.Rds")
+  
+RSS_all_covs <- readRDS("PlotsJuanjo/RSS_all_covs.Rds")
+Adj_R2_all_covs <- readRDS("PlotsJuanjo/Adj_R2_all_covs.Rds")
+Cp_all_covs <- readRDS("PlotsJuanjo/Cp_all_covs.Rds")
+BIC_all_covs <- readRDS("PlotsJuanjo/BIC_all_covs.Rds")
+
+subplot(RSS_all_covs, Adj_R2_all_covs, Cp_all_covs,  BIC_all_covs,
+        nrows = 2)
+```
+
+Observe que la suma cuadrática de los residuales no tiene una gran 
+disminución a partir del modelo con 4 covariables. Por otro lado, según 
+las métricas $R_{\text{Adj}}^2, \ C_p \text{ de Mallows y } BIC$ los mejores
+modelos son aquellos que contienen 4 o 5 covariables, sin embargo no se sabe
+cuales son dichos regresores por lo que se procede a buscarlos.
+
+```{r matriz_covs_all}
+#Problemas respecto a guardar los plots en objetos
+R2_adj_all_covs_vars <- plot(all_covs, scale = "adjr2", 
+                             main = TeX("$R_{Adj}^2$"))
+Cp_all_covs_vars <- plot(all_covs, scale = "Cp", main = TeX("$C_p$"))
+BIC_all_covs_vars <- plot(all_covs, scale = "bic", main = "BIC")
+
+```
+
+Se tienen las siguiente covariables como las más importantes
+
+* bcs, pindex, enzyme_test, liver_test y alc_heavy según $R_{\text{Adj}}^2$
+* bcs, pindex, enzyme_test y alc_heavy según el $C_p$ de Mallows y el BIC
+
+## Selección hacia adelante
+
+```{r forward_selection}
+
+```
+
