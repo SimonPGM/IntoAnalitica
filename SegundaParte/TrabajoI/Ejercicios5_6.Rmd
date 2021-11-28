@@ -14,6 +14,7 @@ library(plotly)
 library(leaps)
 library(olsrr)
 library(latex2exp)
+library(reshape2)
 ```
 
 # Análisis descriptivo
@@ -119,19 +120,28 @@ asimétricos lo cual sugiere que estas variables no se distribuyen normal.
 #   write_rds("bp_age_heavy.Rds")
 
 #Matriz de correlación
-#Se deja en stand by de momento
-corr_matrix <- (ggcorrplot(cor(Survival[1:5]), method = "circle",
-                          hc.order = T))
-
+# corrs <- data.frame(cor(Survival[, c(1:5, 9)]))
+# corrs$Vars <- rownames(corrs)
+# corrs.plot <- melt(corrs, id.vars = "Vars", na.rm = T)
+# 
+# corr_matrix <- (ggplot(corrs.plot, aes(variable, Vars, fill = value)) +
+#   geom_tile() +
+#   labs(fill = "Correlación", x = " ", y = " ", 
+#        title = "Matriz de correlaciones") +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 90))) %>%
+#   ggplotly() %>%
+#   write_rds("corr_matrix.Rds")
 
 bp_age_gender <- readRDS("PlotsJuanjo/bp_age_gender.Rds")
 bp_age_mod <- readRDS("PlotsJuanjo/bp_age_mod.Rds")
 bp_age_heavy <- readRDS("PlotsJuanjo/bp_age_heavy.Rds")
+corr_matrix <- readRDS("PlotsJuanjo/corr_matrix.Rds")
 
-subplot(bp_age_gender, bp_age_mod, bp_age_heavy, nrows = 2)
+subplot(bp_age_gender, bp_age_mod, corr_matrix, bp_age_heavy, nrows = 2)
 ```
 
-Observe que las correlaciones entre las variables numéricas es moderada lo
+Observe que las correlaciones entre las variables numéricas no es muy alta lo cual
 es deseable para evitar potenciales problemas de multicolinealidad. 
 Por otro lado, los boxplots no muestran diferencias entre los promedios 
 de edad respecto al género o consumo de alcohol (ya sea moderado o alto).
@@ -140,7 +150,9 @@ de edad respecto al género o consumo de alcohol (ya sea moderado o alto).
 
 ## Mejor subconjunto
 
-A continuación se realiza el proceso de selección de variables y modelos usando las metodologías directa (usando cross - validation) e indirecta (usando mejor subconjunto, selección hacia adelante y hacia atrás).
+A continuación se realiza el proceso de selección de variables y modelos usando 
+las metodologías directa (usando cross - validation) e indirecta (usando 
+mejor subconjunto, selección hacia adelante y hacia atrás).
 
 ```{r Mejor_subconjunto}
 all_covs <- regsubsets(y ~ ., nvmax = 8, data = Survival)
@@ -302,7 +314,10 @@ subplot(RSS_forward, Adj_R2_forward, Cp_forward, BIC_forward,
         nrows = 2)
 ```
 
-En esta situación, $R_{\text{Adj}}^2, \ C_p \text{ de Mallows y BIC}$ llegan a un concenso y todos consideran que el mejor modelo es aquel que considera 5 covariables; note además que la suma cuadrática de los residuales deja de tener un cambio notable justamente en el mejor modelo con 5 covariables.
+En esta situación, $R_{\text{Adj}}^2, \ C_p \text{ de Mallows y BIC}$ llegan a 
+un concenso y todos consideran que el mejor modelo es aquel que considera 5 
+covariables; note además que la suma cuadrática de los residuales deja de tener
+un cambio notable justamente en el mejor modelo con 5 covariables.
 
 ```{r matriz_forward}
 R2_adj_forward_vars <- plot(forward_selection, scale = "adjr2", 
@@ -396,12 +411,13 @@ Cp_backward_vars <- plot(backward_selection, scale = "Cp", main = TeX("$C_p$"))
 BIC_backward_vars <- plot(backward_selection, scale = "bic", main = "BIC")
 ```
 
-Las conclusiones del método backward son las mismas que las del método de mejor subconjunto, escogiendo como mejores covariables:
+Las conclusiones del método backward son las mismas que las del método de mejor
+subconjunto, escogiendo como mejores covariables:
 
 * bcs, pindex, enezyme_test, liver_test y alc_heavy según $R_{\text{Adj}}^2$ 
 * bcs, pindex, enezyme_test, y alc_heavy según $C_p$ de Mallows y el BIC.
 
-## Conclusiones
+## Observaciones
 
 * En general, las covariables bcs, pindex, enezyme_test y alc_heavy deben ser
 consideradas para explicar la variabilidad de la respuesta, pues fueron escogidas 
@@ -415,5 +431,325 @@ se pueden omitir.
 
 # Selección usando Cross - Validation
 
+En este punto, se procede a seleccionar el mejor modelo usando cross - validation, 
+en particular con las metodologías train - test split y K-Fold
 
+## Train - Test Split
+
+```{r train_test_split}
+set.seed(22)
+indexes <- sample(1:nrow(Survival), floor(nrow(Survival) * 0.7))
+train <- Survival[indexes, ]
+test <- Survival[-indexes, ]
+
+#Usando las diferentes metodologías
+#Mejor subconjunto
+best_subset <- regsubsets(y ~ ., data = train,
+                          nvmax = 8)
+
+#Forward selection
+best_forward <- regsubsets(y ~ ., data = train,
+                          nvmax = 8, method = "forward")
+#Backward selection
+best_backward <- regsubsets(y ~ ., data = train,
+                          nvmax = 8, method = "backward")
+#Usando la función de Mauricio (Pag 34 diapositivas Clase 4)
+predict.regsubsets =function (object,newdata,y){
+  form<-as.formula(object$call[[2]])
+  mat<-model.matrix(form ,newdata)
+  val.errors = rep(NA, (ncol(mat) - 1))
+  for(i in 1:length(val.errors)){
+    coefi<-coef(object ,id=i)
+    xvars<-names (coefi)
+    pred<-mat[,xvars]%*%coefi
+    val.errors [i]= mean((y-pred)^2)
+  }
+  val.errors
+}
+
+MSE_best_subset <- predict.regsubsets(best_subset, test, test$y)
+MSE_best_forward <- predict.regsubsets(best_forward, test, test$y)
+MSE_best_backward <- predict.regsubsets(best_backward, test, test$y)
+
+#Plots 
+#Mejor subconjunto
+# num_covs <- 1:8
+# x_min_mse <- which.min(MSE_best_subset)
+# min_mse <- MSE_best_subset[x_min_mse]
+# 
+# best_subset_mses <- (ggplot(mapping = aes(x =num_covs, 
+#                                          y = MSE_best_subset)) +
+#   geom_line() +
+#   geom_point(aes(x = x_min_mse, y = min_mse), col = "red") +
+#   labs(x = "Número de covariables", y = "MSE", 
+#        title = "Mejor subconjunto")+
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("best_subset_mses.Rds")
+# 
+# #Forward
+# x_min_mse <- which.min(MSE_best_forward)
+# min_mse <- MSE_best_forward[x_min_mse]
+# 
+# best_forward_mses <- (ggplot(mapping = aes(x = num_covs, y = MSE_best_forward)) +
+#   geom_line() +
+#   geom_point(aes(x = x_min_mse, y = min_mse), col = "red") +
+#   labs(x = "Número de covariables", y = "MSE", title = "Selección hacia adelante") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("best_forward_mses.Rds")
+# 
+# #Backward
+# x_min_mse <- which.min(MSE_best_backward)
+# min_mse <- MSE_best_backward[x_min_mse]
+# 
+# best_backward_mses <- (ggplot(mapping = aes(x = num_covs, y = MSE_best_backward)) +
+#   geom_line() +
+#   geom_point(aes(x = x_min_mse, y =  min_mse), col = "red") +
+#   labs(x = "Número de covariables", y = "MSE", title = "Selección hacia atrás") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("best_backward_mses.Rds")
+
+best_subset_mses <- readRDS("PlotsJuanjo/best_subset_mses.Rds")
+best_forward_mses <- readRDS("PlotsJuanjo/best_forward_mses.Rds")
+best_backward_mses <- readRDS("PlotsJuanjo/best_backward_mses.Rds")
+
+subplot(best_subset_mses, best_forward_mses, best_backward_mses, nrows = 3)
+```
+
+
+Según MSE los mejores modelos usando los métodos del mejor subconjunto,
+selección adelante y hacia atrás respectivamente son aquellos con 8 y 6 
+covariables (mejor subconjunto y selección llegan al mismo resultado), 
+sin embargo, se puede notar que a partir de los modelos de 4 covariables 
+la disminución de este es mínimo y se pueden considerar mejores al ser más
+parsimoniosos, además como se vió con las métricas $R_{\text{Adj}}^2, C_p, BIC$,
+los mejores modelos son aquellos que tienen 4 o 5 covariables por lo que se 
+recomienda tomar dichos modelos.
+
+## K - Fold Cross Validation
+
+Se usan 3 capas porque la base de datos tiene pocas observaciones
+
+```{r}
+set.seed(2)
+k <- 3 
+k_fold_index <- sample(1:nrow(Survival))
+divs <- nrow(Survival)/k
+obs <- 1
+k_train <- list()
+for(i in 1:k){
+  k_train[[i]] <- k_fold_index[obs:(i*divs)]
+  obs <- obs + divs
+}
+
+#Mejor subconjunto
+k_fold_errors_subset <- matrix (NA , k, 8, dimnames = list(NULL,paste (1:8)))
+
+for(i in 1:k){
+  current_fit <- regsubsets(y ~ ., data = Survival[-(k_train[[i]]), ], nvmax = 8)
+  pred <- predict.regsubsets(current_fit, Survival[k_train[[i]], ],
+                             Survival$y[k_train[[i]]])
+  k_fold_errors_subset[i, ] <- pred
+}
+
+mean_k_fold_errors_subset <- apply(k_fold_errors_subset, 2, mean)
+
+#Forward
+k_fold_errors_forward <- matrix (NA , k, 8, dimnames = list(NULL,paste (1:8)))
+
+for(i in 1:k){
+  current_fit <- regsubsets(y ~ ., data = Survival[-(k_train[[i]]), ], 
+                            nvmax = 8, method = "forward")
+  pred <- predict.regsubsets(current_fit, Survival[k_train[[i]], ],
+                             Survival$y[k_train[[i]]])
+  k_fold_errors_forward[i, ] <- pred
+}
+mean_k_fold_errors_forward <- apply(k_fold_errors_forward, 2, mean)
+
+#Backward
+k_fold_errors_backward <- matrix (NA , k, 8, dimnames = list(NULL,paste (1:8)))
+
+for(i in 1:k){
+  current_fit <- regsubsets(y ~ ., data = Survival[-(k_train[[i]]), ], 
+                            nvmax = 8, method = "backward")
+  pred <- predict.regsubsets(current_fit, Survival[k_train[[i]], ],
+                             Survival$y[k_train[[i]]])
+  k_fold_errors_backward[i, ] <- pred
+}
+mean_k_fold_errors_backward <- apply(k_fold_errors_backward, 2, mean)
+```
+
+```{r Plots_K_Fold}
+# num_covs <- 1:8
+# 
+# #Mejor subconjunto
+# MSE <- mean_k_fold_errors_subset
+# 
+# x_min_mse <- which.min(mean_k_fold_errors_subset)
+# min_mse <- mean_k_fold_errors_subset[x_min_mse]
+# kfold_subset <- (ggplot(mapping = aes(x = num_covs, y = MSE)) +
+#   geom_line() +
+#   geom_point(aes(x = x_min_mse, y = min_mse), col = "red") +
+#   labs(x = "Número de covariables", title = "Mejor subconjunto") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("kfold_subset.Rds")
+# 
+# #Forward
+# MSE <- mean_k_fold_errors_forward
+# 
+# x_min_mse <- which.min(mean_k_fold_errors_forward)
+# min_mse <- mean_k_fold_errors_forward[x_min_mse]
+# kfold_forward <- (ggplot(mapping = aes(x = num_covs, y = MSE)) +
+#   geom_line() +
+#   geom_point(aes(x = x_min_mse, y = min_mse), col = "red") +
+#   labs(x = "Número de covariables", title = "Selección hacia adelante") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("kfold_forward.Rds")
+# 
+# #Backward
+# MSE <- mean_k_fold_errors_backward
+# 
+# x_min_mse <- which.min(mean_k_fold_errors_backward)
+# min_mse <- mean_k_fold_errors_backward[x_min_mse]
+# kfold_backward <- (ggplot(mapping = aes(x = num_covs, y = MSE)) +
+#   geom_line() +
+#   geom_point(aes(x = x_min_mse, y = min_mse), col = "red") +
+#   labs(x = "Número de covariables", title = "Selección hacia atrás") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("kfold_backward.Rds")
+
+kfold_subset <- readRDS("PlotsJuanjo/kfold_subset.Rds")
+kfold_forward <- readRDS("PlotsJuanjo/kfold_forward.Rds")
+kfold_backward <- readRDS("PlotsJuanjo/kfold_backward.Rds")
+
+subplot(kfold_subset, kfold_forward, kfold_backward, nrows = 3)
+```
+
+
+Nuevamente, el método de mejor subconjunto y el de selección hacia atrás 
+concuerdan con el número de covariables que dan menor MSE mientras que el 
+método de selección hacia adelante considera mejor el de 5 covariables.
+
+## Leave One Out Cross Validation
+
+Dado la escacez de observaciones, esta metología de cross validation es la más
+fiable de todas.
+
+```{r loocv}
+rows <- nrow(Survival)
+#Mejor subconjunto
+loocv_errors_subset <- matrix (NA , rows, 8, 
+                               dimnames = list(NULL,paste (1:8)))
+
+for(i in 1:rows){
+  current_fit <- regsubsets(y ~ ., data = Survival[-i, ], nvmax = 8)
+  pred <- predict.regsubsets(current_fit, Survival[i, ],
+                             Survival$y[i])
+  loocv_errors_subset[i, ] <- pred
+}
+mean_loocv_errors_subset <- apply(loocv_errors_subset, 2, mean)
+
+#Forward
+loocv_errors_forward <- matrix (NA , rows, 8, 
+                               dimnames = list(NULL,paste (1:8)))
+
+for(i in 1:rows){
+  current_fit <- regsubsets(y ~ ., data = Survival[-i, ], 
+                            nvmax = 8, method = "forward")
+  pred <- predict.regsubsets(current_fit, Survival[i, ],
+                             Survival$y[i])
+  loocv_errors_forward[i, ] <- pred
+}
+mean_loocv_errors_forward <- apply(loocv_errors_forward, 2, mean)
+
+#Backward
+loocv_errors_backward <- matrix (NA , rows, 8, 
+                               dimnames = list(NULL,paste (1:8)))
+
+for(i in 1:rows){
+  current_fit <- regsubsets(y ~ ., data = Survival[-i, ], 
+                            nvmax = 8, method = "backward")
+  pred <- predict.regsubsets(current_fit, Survival[i, ],
+                             Survival$y[i])
+  loocv_errors_backward[i, ] <- pred
+}
+mean_loocv_errors_backward <- apply(loocv_errors_backward, 2, mean)
+```
+
+```{r loocv_plots}
+# num_covs <- 1:8
+# 
+# #Mejor subconjunto
+# MSE <- mean_loocv_errors_subset
+# x_min <- which.min(mean_loocv_errors_subset)
+# min_mse <- MSE[x_min]
+# 
+# loocv_subset_plot <- (ggplot(mapping = aes(x = num_covs, y = MSE)) +
+#   geom_line() +
+#   geom_point(aes(x = x_min, y = min_mse), col = "red") +
+#   labs(x = "Número de covariables", y = "MSE", title = "Mejor subconjunto") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("loocv_subset_plot.Rds")
+# 
+# #Forward
+# MSE <- mean_loocv_errors_forward
+# x_min <- which.min(mean_loocv_errors_forward)
+# min_mse <- MSE[x_min]
+# 
+# loocv_forward_plot <- (ggplot(mapping = aes(x = num_covs, y = MSE)) +
+#   geom_line() +
+#   geom_point(aes(x = x_min, y = min_mse), col = "red") +
+#   labs(x = "Número de covariables", y = "MSE", title = "Selección hacia adelante") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("loocv_forward_plot.Rds")
+# 
+# #Backward
+# MSE <- mean_loocv_errors_backward
+# x_min <- which.min(mean_loocv_errors_backward)
+# min_mse <- MSE[x_min]
+# 
+# loocv_backward_plot <- (ggplot(mapping = aes(x = num_covs, y = MSE)) +
+#   geom_line() +
+#   geom_point(aes(x = x_min, y = min_mse), col = "red") +
+#   labs(x = "Número de covariables", y = "MSE", title = "Selección hacia atrás") +
+#   theme_minimal()) %>%
+#   ggplotly() %>%
+#   write_rds("loocv_backward_plot.Rds")
+
+loocv_subset_plot <- readRDS("PlotsJuanjo/loocv_subset_plot.Rds")
+loocv_forward_plot <- readRDS("PlotsJuanjo/loocv_forward_plot.Rds")
+loocv_backward_plot <- readRDS("PlotsJuanjo/loocv_backward_plot.Rds")
+
+subplot(loocv_subset_plot, loocv_forward_plot, loocv_backward_plot, nrows = 3)
+```
+
+Finalmente, al usar LOOCV todos los métodos llegan a que el modelo con menor MSE es
+aquel que usa 5 covariables (se puede verificar que en este caso particular, 
+los 3 MSE son iguales)
+
+# Conclusiones
+
+```{r best_fit, eval=F}
+best_fit <- regsubsets(y ~ ., data = Survival, nvmax = 8)
+coef(best_fit, 5)
+```
+
+
+Después de analizar el desempeño de los modelos usando métricas indirectas 
+(como $R_{\text{Adj}}^2, \ C_p, \ BIC$) y directas (MSE) se concluye que el 
+número óptimo de covariables a usar es 5 pues en la métrica directa más 
+adecuada para la situación presentada (LOOCV) los modelos con este número 
+de covariables fueron los que obtuvieron un menor MSE. Por otro lado, según 
+las métricas indirectas el número adecuado de covariables es 4 o 5 lo cual es 
+coherente con lo mencionado anteriormente. Finalmente se escoge el modelo de 5
+covariables que tuvo un menor MSE, dicho modelo usó las covariables bcs, pindex,
+enzyme_test, liver_test y alc_heavy, las cuales fueron detectadas previamente 
+como las más importantes gracias a los métodos indirectos.
 
